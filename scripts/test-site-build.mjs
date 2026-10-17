@@ -59,6 +59,9 @@ const techniquesPage = read('dist/techniques.html');
 assert(techniquesPage.includes('<td>Empty Rectangle</td><td>120</td><td>Active</td>'), 'technique ratings must show Empty Rectangle as active with SudokUI difficulty 120');
 assert(techniquesPage.includes('<td>Naked Triple</td><td>80</td><td>Active</td>'), 'technique ratings must show Naked Triple as active with SudokUI difficulty 80');
 assert(techniquesPage.includes('<td>Hidden Triple</td><td>100</td><td>Active</td>'), 'technique ratings must show Hidden Triple as active with SudokUI difficulty 100');
+assert(techniquesPage.includes('<td>Hidden Pair</td><td>70</td><td>Active</td>'), 'technique ratings must show Hidden Pair as active with SudokUI difficulty 70');
+assert(techniquesPage.includes('<td>Naked Quad</td><td>120</td><td>Active</td>'), 'technique ratings must show Naked Quad as active with SudokUI difficulty 120');
+assert(techniquesPage.includes('<td>Hidden Quad</td><td>150</td><td>Active</td>'), 'technique ratings must show Hidden Quad as active with SudokUI difficulty 150');
 assert(techniquesPage.includes('<td>Swordfish</td><td>150</td><td>Active</td>'), 'technique ratings must show Swordfish as active with SudokUI difficulty 150');
 assert(techniquesPage.includes('<td>Jellyfish</td><td>160</td><td>Active</td>'), 'technique ratings must show Jellyfish as active with SudokUI difficulty 160');
 

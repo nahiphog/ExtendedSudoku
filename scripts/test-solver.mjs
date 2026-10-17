@@ -83,6 +83,21 @@ assertEliminates(findNakedSubset(candidateMap([
 assertEliminates(findHiddenSubset(candidateMap([
   [cellAt(0, 0), [1, 2, 4]], [cellAt(0, 1), [1, 3, 5]], [cellAt(0, 2), [2, 3, 6]],
 ]), 3), 'Hidden Triple', cellAt(0, 0), 4);
+assertEliminates(findHiddenSubset(candidateMap([
+  [cellAt(0, 0), [1, 2, 3]], [cellAt(0, 1), [1, 2, 4]], [cellAt(0, 2), [3, 4, 5]],
+]), 2), 'Hidden Pair', cellAt(0, 0), 3);
+assertEliminates(findNakedSubset(candidateMap([
+  [cellAt(0, 0), [1, 2]], [cellAt(0, 1), [2, 3]], [cellAt(0, 2), [3, 4]], [cellAt(0, 3), [1, 4]],
+  [cellAt(0, 4), [1, 5]],
+]), 4), 'Naked Quad', cellAt(0, 4), 1);
+assertEliminates(findHiddenSubset(candidateMap([
+  [cellAt(0, 0), [1, 2, 3, 4, 5]], [cellAt(0, 1), [1, 2, 3, 4, 6]],
+  [cellAt(0, 2), [1, 2, 3, 4, 7]], [cellAt(0, 3), [1, 2, 3, 4, 8]],
+]), 4), 'Hidden Quad', cellAt(0, 0), 5);
+assert(findHiddenSubset(candidateMap([
+  [cellAt(0, 0), [1, 2, 3]], [cellAt(0, 1), [1, 2, 4]],
+  [cellAt(0, 2), [2, 3, 4]], [cellAt(0, 3), [2, 3, 4]],
+]), 2) === null, 'a Hidden Pair must not treat an absent digit as part of a subset');
 assertEliminates(findWWing(candidateMap([
   [cellAt(0, 0), [1, 2]], [cellAt(3, 3), [1, 2]], [cellAt(0, 5), [1]], [cellAt(3, 5), [1]], [cellAt(0, 3), [2]],
 ])), 'W-Wing', cellAt(0, 3), 2);
@@ -112,10 +127,7 @@ assertEliminates(findEmptyRectangle(candidateMap([
   [cellAt(0, 1), [1]], [cellAt(1, 0), [1]], [cellAt(0, 5), [1]], [cellAt(4, 5), [1]], [cellAt(4, 0), [1]],
 ])), 'Empty Rectangle', cellAt(4, 0), 1);
 for (const technique of ENABLED_LOGICAL_TECHNIQUES) {
-  assert(exercisedTechniques.has(technique), `${technique} must have direct unique-puzzle regression coverage before being enabled`);
-}
-for (const technique of ['Hidden Pair', 'Naked Quad', 'Hidden Quad']) {
-  assert(!ENABLED_LOGICAL_TECHNIQUES.has(technique), `${technique} must remain gated until it has direct unique-puzzle regression coverage`);
+  assert(exercisedTechniques.has(technique), `${technique} must have direct detector regression coverage before being enabled`);
 }
 
 const fallbackFixture = solveWithTechniques(parsePuzzle(verifyFixtures[1]).values, true);

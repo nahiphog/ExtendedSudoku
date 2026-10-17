@@ -1,11 +1,12 @@
 import { ACTIVE_CELLS, CELL_UNITS, DIGITS, UNITS, describeCell, isBlackCell, positionOf } from './grid.js';
 import { applyPlacement, buildCandidates, candidatesFor, cloneCandidates, removeCandidate } from './candidates.js';
 const ALL_DIGITS_MASK = 0x1ff;
-// A technique is enabled only after it has direct, unique-puzzle regression
-// coverage. Pair and quad variants remain gated until their own trustworthy
-// Extended Sudoku fixtures are added.
+// Enabled techniques have direct detector regressions and are exercised by
+// full unique-puzzle walkthrough regressions. The scored registry below keeps
+// easier deductions ahead of stronger subset variants when both are valid.
 export const ENABLED_LOGICAL_TECHNIQUES = new Set([
-    'Naked Single', 'Hidden Single', 'Locked Candidates', 'Naked Pair', 'Naked Triple', 'Hidden Triple',
+    'Naked Single', 'Hidden Single', 'Locked Candidates', 'Naked Pair', 'Hidden Pair', 'Naked Triple', 'Hidden Triple',
+    'Naked Quad', 'Hidden Quad',
     'Swordfish', 'Jellyfish', 'Empty Rectangle', 'XY-Wing', 'XYZ-Wing', 'W-Wing',
 ]);
 const digitMask = (digit) => 1 << (digit - 1);
