@@ -1,0 +1,42 @@
+* { box-sizing: border-box; }
+body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #fff; font-family: Arial, sans-serif; }
+.layout { width: min(92vw, 720px); }
+h1 { margin: 0 0 18px; text-align: center; font-size: clamp(1.5rem, 4vw, 2.25rem); }
+h2 { margin: 22px 0 10px; font-size: 1rem; }
+.techniques-link, .back-link { display: block; width: fit-content; margin: -8px auto 16px; color: #000; font-weight: 600; }
+.grid { display: grid; grid-template-columns: repeat(12, 1fr); border: 6.75px solid #000; }
+.cell { appearance: none; aspect-ratio: 1; padding: 0; border: 0; border-right: 1px solid #111; border-bottom: 1px solid #111; background: #fff; font: 600 clamp(12px, 2.4vw, 22px) Arial, sans-serif; }
+.cell:nth-child(12n) { border-right: 0; }
+.cell:nth-child(n + 133) { border-bottom: 0; }
+.grey { background: #000; border: 0; }
+.v-divider { border-right: 6.75px solid #000; }
+.h-divider { border-bottom: 6.75px solid #000; }
+.grey.v-divider, .grey.h-divider { border-color: #000; }
+.cell:not(.grey) { cursor: pointer; }
+.cell:not(.grey):hover, .cell:not(.grey):focus-visible { background: #e8e8e8; outline: 0; }
+.generate { display: block; width: 100%; margin-top: 16px; padding: 12px; border: 2px solid #000; background: #fff; color: #000; font: 600 16px Arial, sans-serif; cursor: pointer; }
+.generate:hover, .generate:focus-visible { background: #000; color: #fff; outline: 0; }
+.actions { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 10px; }
+.actions button { padding: 10px; border: 2px solid #000; background: #fff; font: 600 14px Arial, sans-serif; cursor: pointer; }
+.actions button:hover, .actions button:focus-visible { background: #000; color: #fff; outline: 0; }
+.well { display: block; min-height: 44px; margin-top: 16px; padding: 12px 14px; border: 2px solid #000; font-size: 16px; }
+#final-section { margin: 28px 0; }
+#generation-summary { font-weight: 600; }
+.final-grid .cell { display: grid; place-items: center; cursor: default; }
+.final-grid .cell:hover { background: #fff; }
+.final-grid .grey:hover { background: #000; }
+.step-highlight { background: #fff0a6 !important; }
+.statistics { margin-top: 16px; padding: 16px; border: 2px solid #000; }
+.statistics h3 { margin: 0 0 10px; font-size: 1rem; }
+.statistics h3:not(:first-child) { margin-top: 22px; }
+.statistics table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+.statistics th, .statistics td { padding: 9px 10px; border: 1px solid #000; text-align: left; }
+.statistics th:last-child, .statistics td:last-child { width: 84px; text-align: right; }
+.statistics label { display: block; margin-bottom: 8px; font-weight: 600; }
+.statistics input[type="range"] { width: 100%; accent-color: #000; }
+.solve-step-label { display: block; min-height: 24px; margin-top: 8px; }
+.techniques-page { width: min(92vw, 760px); padding: 36px 0; }
+.techniques-page h1 { text-align: left; }
+.techniques-page section { border-top: 2px solid #000; padding: 4px 0 12px; }
+.techniques-page p { line-height: 1.55; }
+.license-note { margin-top: 28px; font-size: .9rem; }
