@@ -23,4 +23,4 @@ const api = [
   'generateCompletedGrid', 'digSingleCell',
 ];
 
-writeFileSync(resolve(coreDirectory, 'extended-sudoku-core.js'), `/* Generated from TypeScript core modules. */\n(function (global) {\n${body}\n  global.ExtendedSudokuCore = { ${api.join(', ')} };\n}(window));\n`);
+writeFileSync(resolve(coreDirectory, 'extended-sudoku-core.js'), `/* Generated from TypeScript core modules. */\n(function (global) {\n${body}\n  global.ExtendedSudokuCore = { ${api.join(', ')} };\n}(typeof window !== 'undefined' ? window : globalThis));\n`);

@@ -521,4 +521,4 @@ const digSingleCell = (completed) => {
 };
 
   global.ExtendedSudokuCore = { ACTIVE_CELLS, describeCell, isBlackCell, positionOf, parsePuzzle, applyPlacement, buildCandidates, removeCandidate, findSolutions, solveWithTechniques, generateCompletedGrid, digSingleCell };
-}(window));
+}(typeof window !== 'undefined' ? window : globalThis));

@@ -25,6 +25,9 @@ for (const [pagePath, scriptName] of pages) {
   assert(!/^import /m.test(script), `${scriptName} must be runnable from file:// without imports`);
 }
 
+assert(existsSync(resolve(root, 'dist/simulation-difficulty-worker.js')), 'difficulty simulation must emit its isolated rating worker');
+assert(read('dist/simulation-difficulty.js').includes('simulation-difficulty-worker.js'), 'difficulty simulation must use the rating worker');
+
 const difficultyPage = read('dist/simulation-difficulty.html');
 assert(difficultyPage.includes('Display grids with difficulty ratings at least'), 'difficulty simulation must expose its rating threshold');
 for (const rating of ['300', '400', '500', '600', '700', '800', '1000', '1500']) {

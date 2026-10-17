@@ -1,6 +1,6 @@
 "use strict";
 // @ts-nocheck
-const { ACTIVE_CELLS, generateCompletedGrid, digSingleCell, solveWithTechniques } = window.ExtendedSudokuCore;
+const { ACTIVE_CELLS, generateCompletedGrid, digSingleCell } = window.ExtendedSudokuCore;
 const trials = document.querySelector('#trials');
 const minimum = document.querySelector('#minimum-difficulty');
 const run = document.querySelector('#run');
@@ -18,6 +18,10 @@ const weights = {
     'Brute force': 30,
 };
 let halted = false;
+let activeWorker = null;
+let settleActiveWorker = null;
+let runId = 0;
+const ratingTimeoutMs = 2000;
 const stringify = (values) => values.map((value) => value || '.').join('');
 const clueCount = (values) => ACTIVE_CELLS.filter((cell) => values[cell]).length;
 const difficultyRating = (moves) => moves.reduce((total, move) => total + (weights[move.technique] ?? 0), 0);
@@ -36,27 +40,70 @@ function copyButton(text) {
     };
     return button;
 }
-function renderPuzzle(result, index) {
+function renderPuzzle(result, index, kind) {
     const item = document.createElement('li');
     const title = document.createElement('strong');
-    title.textContent = `Qualifying result ${index + 1} — difficulty ${result.rating} · ${clueCount(result.puzzle)} given cells`;
+    title.textContent = kind === 'unknown'
+        ? `Difficulty unknown ${index + 1} — rating did not finish within ${ratingTimeoutMs / 1000} seconds · ${clueCount(result.puzzle)} given cells`
+        : `Qualifying result ${index + 1} — difficulty ${result.rating} · ${clueCount(result.puzzle)} given cells`;
     const code = document.createElement('code');
     const text = stringify(result.puzzle);
     code.textContent = text;
     item.append(title, code, copyButton(text));
     return item;
 }
-function show(results, focus = false) {
+function show(results, unknown, focus = false) {
     selected.replaceChildren();
-    if (!results.length)
-        return;
-    const list = document.createElement('ol');
-    results.forEach((result, index) => list.append(renderPuzzle(result, index)));
-    selected.append(list);
+    if (results.length) {
+        const heading = document.createElement('h2');
+        heading.textContent = 'Qualifying grids';
+        const list = document.createElement('ol');
+        results.forEach((result, index) => list.append(renderPuzzle(result, index, 'qualifying')));
+        selected.append(heading, list);
+    }
+    if (unknown.length) {
+        const heading = document.createElement('h2');
+        heading.textContent = 'Grids with unknown difficulty';
+        const notice = document.createElement('p');
+        notice.textContent = 'The solver was stopped for these grids so the simulation could continue.';
+        const list = document.createElement('ol');
+        unknown.forEach((result, index) => list.append(renderPuzzle(result, index, 'unknown')));
+        selected.append(heading, notice, list);
+    }
     if (focus)
         selected.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
+function calculateDifficulty(puzzle) {
+    return new Promise((resolve) => {
+        const worker = new Worker('./simulation-difficulty-worker.js');
+        let settled = false;
+        const finish = (result) => {
+            if (settled)
+                return;
+            settled = true;
+            clearTimeout(timer);
+            worker.terminate();
+            if (activeWorker === worker) {
+                activeWorker = null;
+                settleActiveWorker = null;
+            }
+            resolve(result);
+        };
+        const timer = setTimeout(() => finish({ unknown: true }), ratingTimeoutMs);
+        activeWorker = worker;
+        settleActiveWorker = finish;
+        worker.onmessage = ({ data }) => data?.error
+            ? finish({ unknown: true })
+            : finish({ rating: difficultyRating(data.moves ?? []) });
+        worker.onerror = () => finish({ unknown: true });
+        worker.postMessage(puzzle);
+    });
+}
 run.onclick = () => {
+    runId += 1;
+    const thisRun = runId;
+    activeWorker?.terminate();
+    settleActiveWorker?.({ cancelled: true });
     halted = false;
     selected.replaceChildren();
     const total = Number(trials.value);
@@ -64,27 +111,37 @@ run.onclick = () => {
     let done = 0;
     let elapsed = 0;
     const qualifying = [];
-    const tick = () => {
-        if (halted || done >= total) {
+    const unknown = [];
+    const tick = async () => {
+        if (thisRun !== runId || halted || done >= total) {
             const state = halted ? 'halted' : 'complete';
-            simStatus.textContent = `${done}/${total} trials · average ${(elapsed / Math.max(1, done)).toFixed(1)} ms · ${qualifying.length} qualifying result(s) · ${state} · shared single-cell digging`;
+            simStatus.textContent = `${done}/${total} trials · average ${(elapsed / Math.max(1, done)).toFixed(1)} ms · ${qualifying.length} qualifying result(s) · ${unknown.length} unknown rating(s) · ${state} · shared single-cell digging`;
             return;
         }
         const startedAt = performance.now();
         const puzzle = digSingleCell(generateCompletedGrid());
-        const solved = solveWithTechniques(puzzle);
-        const rating = difficultyRating(solved.moves);
+        const result = await calculateDifficulty(puzzle);
+        if (thisRun !== runId)
+            return;
         elapsed += performance.now() - startedAt;
         done += 1;
         const before = qualifying.length;
-        if (rating >= minimumRating && qualifying.length < 2)
-            qualifying.push({ puzzle, rating });
-        simStatus.textContent = `${done}/${total} trials · average ${(elapsed / done).toFixed(1)} ms · ${qualifying.length} qualifying result(s) · shared single-cell digging`;
-        if (qualifying.length > before)
-            show(qualifying, true);
+        if (result.unknown)
+            unknown.push({ puzzle });
+        else if (result.rating >= minimumRating && qualifying.length < 2)
+            qualifying.push({ puzzle, rating: result.rating });
+        simStatus.textContent = `${done}/${total} trials · average ${(elapsed / done).toFixed(1)} ms · ${qualifying.length} qualifying result(s) · ${unknown.length} unknown rating(s) · shared single-cell digging`;
+        if (qualifying.length > before || result.unknown)
+            show(qualifying, unknown, true);
         if (done < total && !halted)
             setTimeout(tick, 0);
+        else if (halted)
+            tick();
     };
     tick();
 };
-halt.onclick = () => { halted = true; };
+halt.onclick = () => {
+    halted = true;
+    activeWorker?.terminate();
+    settleActiveWorker?.({ cancelled: true });
+};
