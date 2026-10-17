@@ -109,7 +109,7 @@ generator.addEventListener('click', () => {
     const elapsed = ((performance.now() - startedAt) / 1000).toFixed(2);
     const difficultyPoints = { 'Naked Single': 4, 'Hidden Single': 14, 'Locked Candidates': 50, 'Naked Pair': 60, 'Naked Triple': 80, 'Hidden Pair': 70, 'Hidden Triple': 100, 'Naked Quad': 120, 'Hidden Quad': 150, 'Empty Rectangle': 120, 'Swordfish': 150, 'Jellyfish': 160, 'XY-Wing': 160, 'XYZ-Wing': 180, 'W-Wing': 150, 'Brute force': 10000 };
     const difficultyRating = solveTrace.reduce((total, step) => total + (difficultyPoints[step.technique] ?? 0), 0);
-    summary.textContent = `Difficulty rating: ${difficultyRating} · Unique minimal puzzle · ${108 - removed} clues · ${elapsed}s`;
+    summary.textContent = `Difficulty rating: ${difficultyRating} · ${108 - removed} clues · ${elapsed}s`;
     renderTechniqueTable(solveTrace);
     populateStepMenu();
     setReplayStep(0);
