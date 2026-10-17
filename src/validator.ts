@@ -155,11 +155,18 @@ button.addEventListener('click', () => {
     return;
   }
   const solved = solveWithTechniques(givens, true);
-  validatorStatus.textContent = solved.usedBruteForce
+  validatorStatus.textContent = !solved.walkthroughValid
+    ? `This puzzle has a unique solution. The walkthrough stopped safely: ${solved.walkthroughError}`
+    : solved.usedBruteForce
     ? 'This puzzle has a unique solution. Logical techniques are shown first; brute force follows only when they are exhausted.'
     : 'This puzzle has a unique solution using the supported logical techniques.';
   const card = document.createElement('div'); card.className = 'validator-card';
   const heading = document.createElement('h2'); heading.textContent = 'Unique solution';
-  card.append(heading, createWalkthrough(givens, solved.moves)); solutions.append(card);
+  card.append(heading);
+  if (!solved.walkthroughValid && solved.solution) {
+    const solutionHeading = document.createElement('h3'); solutionHeading.textContent = 'Solved grid';
+    card.append(solutionHeading, createBoard(solved.solution, givens));
+  }
+  card.append(createWalkthrough(givens, solved.moves)); solutions.append(card);
   solutions.scrollIntoView({ behavior: 'smooth', block: 'start' });
 });

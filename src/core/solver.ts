@@ -3,6 +3,12 @@ import { applyPlacement, buildCandidates, candidatesFor, removeCandidate, type C
 import type { CandidateElimination, Digit, GridValues, SolveMove, SolveResult, Technique } from './types.js';
 
 const ALL_DIGITS_MASK = 0x1ff;
+// A technique is enabled only after it has direct, unique-puzzle regression
+// coverage. Hidden Pair and the quad rules remain implemented but gated until
+// their own trustworthy Extended Sudoku fixtures are added.
+export const ENABLED_LOGICAL_TECHNIQUES = new Set<Technique>([
+  'Naked Single', 'Hidden Single', 'Locked Candidates', 'Naked Pair',
+]);
 const digitMask = (digit: number): number => 1 << (digit - 1);
 const bitCount = (value: number): number => {
   let count = 0;
@@ -256,7 +262,11 @@ const findHiddenSubset = (candidates: CandidateMap, size: 2 | 4): SolveMove | nu
   for (let unitIndex = 0; unitIndex < UNITS.length; unitIndex += 1) {
     const unit = UNITS[unitIndex];
     for (const digits of combinations(DIGITS, size)) {
-      const sourceCells = unit.filter((cell) => digits.some((digit) => candidates.get(cell)?.has(digit)));
+      // Each digit must actually occur. Without this check a missing digit can
+      // masquerade as part of a hidden subset and remove a valid candidate.
+      const locations = digits.map((digit) => unit.filter((cell) => candidates.get(cell)?.has(digit)));
+      if (locations.some((cells) => cells.length === 0)) continue;
+      const sourceCells = Array.from(new Set(locations.flat()));
       if (sourceCells.length !== size) continue;
       const digitSet = new Set<number>(digits);
       const eliminations: CandidateElimination[] = [];
@@ -271,13 +281,13 @@ const findHiddenSubset = (candidates: CandidateMap, size: 2 | 4): SolveMove | nu
 };
 
 const nextLogicalMove = (candidates: CandidateMap): SolveMove | null =>
-  findNakedSingle(candidates)
-  ?? findHiddenSingle(candidates)
-  ?? findLockedCandidates(candidates)
-  ?? findNakedSubset(candidates, 2)
-  ?? findHiddenSubset(candidates, 2)
-  ?? findNakedSubset(candidates, 4)
-  ?? findHiddenSubset(candidates, 4);
+  (ENABLED_LOGICAL_TECHNIQUES.has('Naked Single') ? findNakedSingle(candidates) : null)
+  ?? (ENABLED_LOGICAL_TECHNIQUES.has('Hidden Single') ? findHiddenSingle(candidates) : null)
+  ?? (ENABLED_LOGICAL_TECHNIQUES.has('Locked Candidates') ? findLockedCandidates(candidates) : null)
+  ?? (ENABLED_LOGICAL_TECHNIQUES.has('Naked Pair') ? findNakedSubset(candidates, 2) : null)
+  ?? (ENABLED_LOGICAL_TECHNIQUES.has('Hidden Pair') ? findHiddenSubset(candidates, 2) : null)
+  ?? (ENABLED_LOGICAL_TECHNIQUES.has('Naked Quad') ? findNakedSubset(candidates, 4) : null)
+  ?? (ENABLED_LOGICAL_TECHNIQUES.has('Hidden Quad') ? findHiddenSubset(candidates, 4) : null);
 
 const applyMove = (values: GridValues, candidates: CandidateMap, move: SolveMove): void => {
   if (move.cell !== undefined && move.digit !== undefined) {
@@ -286,39 +296,78 @@ const applyMove = (values: GridValues, candidates: CandidateMap, move: SolveMove
   move.eliminations?.forEach(({ cell, digit }) => removeCandidate(candidates, cell, digit));
 };
 
+const candidateStateIsViable = (values: readonly number[], candidates: CandidateMap): boolean => {
+  for (const cell of ACTIVE_CELLS) {
+    if (!values[cell] && !(candidates.get(cell)?.size)) return false;
+  }
+  return UNITS.every((unit) => {
+    const placed = new Set(unit.map((cell) => values[cell]).filter(Boolean));
+    return DIGITS.every((digit) => placed.has(digit)
+      || unit.some((cell) => !values[cell] && candidates.get(cell)?.has(digit)));
+  });
+};
+
+const moveMatchesSolution = (move: SolveMove, candidates: CandidateMap, solution: readonly number[]): string | null => {
+  if (move.cell !== undefined && move.digit !== undefined) {
+    if (!candidates.get(move.cell)?.has(move.digit)) return `${move.technique} places an unavailable candidate at ${describeCell(move.cell)}.`;
+    if (solution[move.cell] !== move.digit) return `${move.technique} conflicts with the solved value at ${describeCell(move.cell)}.`;
+  }
+  for (const { cell, digit } of move.eliminations ?? []) {
+    if (!candidates.get(cell)?.has(digit)) return `${move.technique} removes an unavailable candidate at ${describeCell(cell)}.`;
+    if (solution[cell] === digit) return `${move.technique} removes the solved value at ${describeCell(cell)}.`;
+  }
+  return null;
+};
+
 /**
  * Applies supported human-style techniques until they are exhausted.  Only then,
  * when allowed, it records remaining placements as a clearly-labelled brute-force
  * fallback.  Each recorded placement is made into the displayed state first.
  */
 export const solveWithTechniques = (input: readonly number[], allowBruteForce = true): SolveResult => {
-  if (!isConsistent(input)) return { solution: null, solutionCount: 0, moves: [], usedBruteForce: false };
+  if (!isConsistent(input)) return { solution: null, solutionCount: 0, moves: [], usedBruteForce: false, walkthroughValid: false, walkthroughError: 'The givens are inconsistent.' };
+  const solution = solveOne(input);
+  if (!solution) return { solution: null, solutionCount: 0, moves: [], usedBruteForce: false, walkthroughValid: false, walkthroughError: 'The puzzle has no solution.' };
   const values = [...input];
   const candidates = buildCandidates(values);
   const moves: SolveMove[] = [];
   let move = nextLogicalMove(candidates);
   while (move) {
+    const moveError = moveMatchesSolution(move, candidates, solution);
+    if (moveError) return {
+      solution, solutionCount: countSolutions(input), moves, usedBruteForce: false,
+      walkthroughValid: false, walkthroughError: moveError,
+    };
     applyMove(values, candidates, move);
+    if (!candidateStateIsViable(values, candidates)) return {
+      solution, solutionCount: countSolutions(input), moves, usedBruteForce: false,
+      walkthroughValid: false, walkthroughError: `${move.technique} leaves an impossible candidate state.`,
+    };
     moves.push(move);
     move = nextLogicalMove(candidates);
   }
 
   if (ACTIVE_CELLS.every((cell) => values[cell])) {
-    return { solution: values, solutionCount: 1, moves, usedBruteForce: false };
+    return { solution: values, solutionCount: 1, moves, usedBruteForce: false, walkthroughValid: true };
   }
-  const solution = solveOne(values);
-  if (!solution) return { solution: null, solutionCount: 0, moves, usedBruteForce: false };
-  if (!allowBruteForce) return { solution, solutionCount: countSolutions(input), moves, usedBruteForce: false };
+  if (!allowBruteForce) return { solution, solutionCount: countSolutions(input), moves, usedBruteForce: false, walkthroughValid: true };
 
-  ACTIVE_CELLS.forEach((cell) => {
-    if (values[cell]) return;
+  for (const cell of ACTIVE_CELLS) {
+    if (values[cell]) continue;
     const digit = asDigit(solution[cell]);
     const available = candidates.get(cell);
-    if (!available?.has(digit)) throw new Error(`Invalid fallback placement at ${describeCell(cell)}.`);
+    if (!available?.has(digit)) return {
+      solution, solutionCount: countSolutions(input), moves, usedBruteForce: false,
+      walkthroughValid: false, walkthroughError: `The fallback value was missing from the recorded candidate state at ${describeCell(cell)}.`,
+    };
     const fallback = placementMove('Brute force', cell, digit, [cell],
       `Trial and error places ${digit} at ${describeCell(cell)} after logical techniques are exhausted.`);
     applyMove(values, candidates, fallback);
     moves.push(fallback);
-  });
-  return { solution: values, solutionCount: countSolutions(input), moves, usedBruteForce: true };
+    if (!candidateStateIsViable(values, candidates)) return {
+      solution, solutionCount: countSolutions(input), moves, usedBruteForce: false,
+      walkthroughValid: false, walkthroughError: `Brute force leaves an impossible candidate state at ${describeCell(cell)}.`,
+    };
+  }
+  return { solution: values, solutionCount: countSolutions(input), moves, usedBruteForce: true, walkthroughValid: true };
 };

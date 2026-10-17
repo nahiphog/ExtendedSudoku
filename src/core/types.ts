@@ -37,6 +37,9 @@ export interface SolveResult {
   solutionCount: number;
   moves: SolveMove[];
   usedBruteForce: boolean;
+  /** False only when a proposed walkthrough step fails internal validation. */
+  walkthroughValid: boolean;
+  walkthroughError?: string;
 }
 
 export interface ParsedPuzzle {
