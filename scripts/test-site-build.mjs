@@ -43,11 +43,20 @@ for (const pagePath of ['dist/simulation.html', 'dist/simulation-difficulty.html
   assert(page.includes('id="simulation-toggle"'), `${pagePath} must provide a single simulation toggle`);
   assert(!page.includes('id="run"') && !page.includes('id="halt"'), `${pagePath} must not retain separate Run and Halt buttons`);
   assert((page.match(/class="simulation-option"/g) ?? []).length === 2, `${pagePath} must separate its two options into paragraphs`);
+  for (const [value, label] of [['1000', '1,000'], ['10000', '10,000'], ['100000', '100,000'], ['1000000', '1,000,000']]) {
+    assert(new RegExp(`<option value="${value}"(?: selected)?>${label}</option>`).test(page), `${pagePath} must format ${value} trial(s) with commas`);
+  }
 }
+const validatorPage = read('dist/validator.html');
+assert(validatorPage.includes('class="actions validator-actions"'), 'Verify controls must share one action row');
+assert(read('dist/validator.js').includes("createGridCopyActions(solved.solution, 'completed grid')") && read('dist/validator.js').includes('copyGridImage'),
+  'Verify results must support string and image copying for a completed grid');
 const techniquesPage = read('dist/techniques.html');
 assert(techniquesPage.includes('<td>Empty Rectangle</td><td>120</td><td>Active</td>'), 'technique ratings must show Empty Rectangle as active with SudokUI difficulty 120');
 assert(techniquesPage.includes('<td>Naked Triple</td><td>80</td><td>Active</td>'), 'technique ratings must show Naked Triple as active with SudokUI difficulty 80');
 assert(techniquesPage.includes('<td>Hidden Triple</td><td>100</td><td>Active</td>'), 'technique ratings must show Hidden Triple as active with SudokUI difficulty 100');
+assert(techniquesPage.includes('<td>Swordfish</td><td>150</td><td>Active</td>'), 'technique ratings must show Swordfish as active with SudokUI difficulty 150');
+assert(techniquesPage.includes('<td>Jellyfish</td><td>160</td><td>Active</td>'), 'technique ratings must show Jellyfish as active with SudokUI difficulty 160');
 
 assert(existsSync(resolve(root, 'dist/core/extended-sudoku-core.js')), 'the shared browser solver bundle must be emitted');
 const browserContext = { window: {} };

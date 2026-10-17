@@ -11,7 +11,7 @@ const solutions = document.querySelector<HTMLDivElement>('#solutions')!;
 const techniqueWeights: Record<Technique, number> = {
   'Snyder Notation': 0, 'Naked Single': 4, 'Hidden Single': 14, 'Locked Candidates': 50,
   'Naked Pair': 60, 'Naked Triple': 80, 'Hidden Pair': 70, 'Hidden Triple': 100, 'Naked Quad': 120, 'Hidden Quad': 150,
-  'Empty Rectangle': 120, 'XY-Wing': 160, 'XYZ-Wing': 180, 'W-Wing': 150, 'Brute force': 10000,
+  'Empty Rectangle': 120, 'Swordfish': 150, 'Jellyfish': 160, 'XY-Wing': 160, 'XYZ-Wing': 180, 'W-Wing': 150, 'Brute force': 10000,
 };
 
 const createCell = (cell: number, values: readonly number[], givens: readonly number[], candidates?: CandidateMap,
@@ -136,12 +136,51 @@ const createWalkthrough = (givens: GridValues, moves: SolveMove[]): HTMLElement 
   return workspace;
 };
 
+const serializeGrid = (values: readonly number[]): string => values.map((value) => value || '.').join('');
+
+const copyGridImage = async (values: readonly number[]): Promise<void> => {
+  if (!navigator.clipboard?.write || !window.ClipboardItem) throw new Error('Image clipboard is unavailable.');
+  const cellSize = 48;
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = cellSize * 12;
+  const context = canvas.getContext('2d');
+  if (!context) throw new Error('Canvas is unavailable.');
+  context.fillStyle = '#20223d'; context.fillRect(0, 0, canvas.width, canvas.height);
+  context.textAlign = 'center'; context.textBaseline = 'middle'; context.font = '700 24px Arial';
+  for (let cell = 0; cell < 144; cell += 1) {
+    if (isBlackCell(cell)) continue;
+    const row = Math.floor(cell / 12); const column = cell % 12;
+    const x = column * cellSize; const y = row * cellSize;
+    context.fillStyle = '#fffefa'; context.fillRect(x, y, cellSize, cellSize);
+    context.strokeStyle = '#aeb4d5'; context.lineWidth = 1; context.strokeRect(x, y, cellSize, cellSize);
+    if (values[cell]) { context.fillStyle = '#20223d'; context.fillText(String(values[cell]), x + cellSize / 2, y + cellSize / 2); }
+  }
+  const image = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'));
+  if (!image) throw new Error('Image generation failed.');
+  await navigator.clipboard.write([new ClipboardItem({ 'image/png': image })]);
+};
+
+const createGridCopyActions = (values: readonly number[], label = 'grid'): HTMLDivElement => {
+  const actions = document.createElement('div'); actions.className = 'actions solution-copy-actions';
+  const stringButton = document.createElement('button'); stringButton.type = 'button'; stringButton.textContent = `Copy ${label} string`;
+  const imageButton = document.createElement('button'); imageButton.type = 'button'; imageButton.textContent = `Copy ${label} image`;
+  stringButton.onclick = async () => {
+    try { await navigator.clipboard.writeText(serializeGrid(values)); stringButton.textContent = 'Copied'; }
+    catch { stringButton.textContent = 'Copy failed'; }
+  };
+  imageButton.onclick = async () => {
+    try { await copyGridImage(values); imageButton.textContent = 'Copied'; }
+    catch { imageButton.textContent = 'Copy failed'; }
+  };
+  actions.append(stringButton, imageButton); return actions;
+};
+
 const createSolutionCard = (heading: string, values: GridValues, givens: GridValues, other?: GridValues): HTMLElement => {
   const card = document.createElement('div'); card.className = 'validator-card';
   const title = document.createElement('h2'); title.textContent = heading; card.append(title);
   const board = createBoard(values, givens);
   if (other) ACTIVE_CELLS.forEach((cell) => { if (values[cell] !== other[cell]) board.querySelectorAll('.cell')[cell].classList.add('differs'); });
-  card.append(board); return card;
+  card.append(board, createGridCopyActions(values)); return card;
 };
 
 const clearInput = (): void => {
@@ -189,7 +228,7 @@ button.addEventListener('click', () => {
     : 'This puzzle has a unique solution using the supported logical techniques.';
   const card = document.createElement('div'); card.className = 'validator-card';
   const heading = document.createElement('h2'); heading.textContent = 'Unique solution';
-  card.append(heading);
+  card.append(heading, createGridCopyActions(solved.solution, 'completed grid'));
   if (!solved.walkthroughValid && solved.solution) {
     const solutionHeading = document.createElement('h3'); solutionHeading.textContent = 'Solved grid';
     card.append(solutionHeading, createBoard(solved.solution, givens));

@@ -126,7 +126,7 @@ const ALL_DIGITS_MASK = 0x1ff;
 // Extended Sudoku fixtures are added.
 const ENABLED_LOGICAL_TECHNIQUES = new Set([
     'Naked Single', 'Hidden Single', 'Locked Candidates', 'Naked Pair', 'Naked Triple', 'Hidden Triple',
-    'Empty Rectangle', 'XY-Wing', 'XYZ-Wing', 'W-Wing',
+    'Swordfish', 'Jellyfish', 'Empty Rectangle', 'XY-Wing', 'XYZ-Wing', 'W-Wing',
 ]);
 const digitMask = (digit) => 1 << (digit - 1);
 const bitCount = (value) => {
@@ -499,6 +499,47 @@ const findWWing = (candidates) => {
         }
     return null;
 };
+/** Finds a standard row- or column-based fish, ignoring the black cells. */
+const findBasicFish = (candidates, size) => {
+    const technique = size === 3 ? 'Swordfish' : 'Jellyfish';
+    const lineIndexes = Array.from({ length: 12 }, (_, index) => index);
+    for (const digit of DIGITS)
+        for (const rowBased of [true, false]) {
+            // Build 12-bit masks first, then combine masks. This keeps fish scanning
+            // inexpensive even though it is evaluated alongside every other strategy.
+            const lineMasks = lineIndexes.map((line) => UNITS[rowBased ? line : 12 + line].reduce((mask, cell) => !isBlackCell(cell) && candidates.get(cell)?.has(digit) ? mask | (1 << (rowBased ? cell % 12 : Math.floor(cell / 12))) : mask, 0));
+            const eligibleLines = lineIndexes.filter((line) => {
+                const count = bitCount(lineMasks[line]);
+                return count >= 2 && count <= size;
+            });
+            for (const baseLines of combinations(eligibleLines, size)) {
+                const coverMask = baseLines.reduce((mask, line) => mask | lineMasks[line], 0);
+                // A basic fish has two to `size` candidates in every base line, all
+                // restricted to exactly `size` cover lines. Black cells do not appear
+                // because candidate maps contain active cells only.
+                if (bitCount(coverMask) !== size)
+                    continue;
+                const coverLines = lineIndexes.filter((line) => coverMask & (1 << line));
+                const sourceCells = baseLines.flatMap((line) => UNITS[rowBased ? line : 12 + line]
+                    .filter((cell) => !isBlackCell(cell) && candidates.get(cell)?.has(digit)));
+                const eliminations = [];
+                for (const coverLine of coverLines)
+                    for (const otherLine of lineIndexes) {
+                        if (baseLines.includes(otherLine))
+                            continue;
+                        const cell = rowBased ? otherLine * 12 + coverLine : coverLine * 12 + otherLine;
+                        if (!isBlackCell(cell) && candidates.get(cell)?.has(digit))
+                            eliminations.push({ cell, digit });
+                    }
+                if (!eliminations.length)
+                    continue;
+                const baseName = rowBased ? 'rows' : 'columns';
+                const coverName = rowBased ? 'columns' : 'rows';
+                return eliminationMove(technique, eliminations, sourceCells, `A ${technique} on ${digit} in ${baseName} ${baseLines.map((line) => line + 1).join(', ')} confines it to ${coverName} ${coverLines.map((line) => line + 1).join(', ')}.`);
+            }
+        }
+    return null;
+};
 const findEmptyRectangle = (candidates) => {
     for (let boxIndex = 24; boxIndex < UNITS.length; boxIndex += 1)
         for (const digit of DIGITS) {
@@ -574,7 +615,9 @@ const LOGICAL_TECHNIQUE_SCORES = Object.freeze({
     'Naked Quad': 120,
     'Empty Rectangle': 120,
     'Hidden Quad': 150,
+    'Swordfish': 150,
     'W-Wing': 150,
+    'Jellyfish': 160,
     'XY-Wing': 160,
     'XYZ-Wing': 180,
 });
@@ -591,7 +634,9 @@ const LOGICAL_TECHNIQUES = [
     { technique: 'Naked Quad', difficulty: 120, find: (candidates) => findNakedSubset(candidates, 4) },
     { technique: 'Empty Rectangle', difficulty: 120, find: findEmptyRectangle },
     { technique: 'Hidden Quad', difficulty: 150, find: (candidates) => findHiddenSubset(candidates, 4) },
+    { technique: 'Swordfish', difficulty: 150, find: (candidates) => findBasicFish(candidates, 3) },
     { technique: 'W-Wing', difficulty: 150, find: findWWing },
+    { technique: 'Jellyfish', difficulty: 160, find: (candidates) => findBasicFish(candidates, 4) },
     { technique: 'XY-Wing', difficulty: 160, find: findXYWing },
     { technique: 'XYZ-Wing', difficulty: 180, find: findXYZWing },
 ];

@@ -16,7 +16,7 @@ const weights = {
     'Hidden Triple': 100,
     'Naked Quad': 120,
     'Hidden Quad': 150,
-    'Empty Rectangle': 120, 'XY-Wing': 160, 'XYZ-Wing': 180, 'W-Wing': 150,
+    'Empty Rectangle': 120, 'Swordfish': 150, 'Jellyfish': 160, 'XY-Wing': 160, 'XYZ-Wing': 180, 'W-Wing': 150,
     'Brute force': 10000,
 };
 let halted = false;

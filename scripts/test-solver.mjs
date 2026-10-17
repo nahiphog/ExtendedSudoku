@@ -1,6 +1,6 @@
 import { cellAt, parsePuzzle } from '../dist/core/grid.js';
 import { applyPlacement, buildCandidates, removeCandidate } from '../dist/core/candidates.js';
-import { ENABLED_LOGICAL_TECHNIQUES, findEmptyRectangle, findHiddenSubset, findNakedSubset, findSolutions, findWWing, findXYWing, findXYZWing, isConsistent, solveWithTechniques } from '../dist/core/solver.js';
+import { ENABLED_LOGICAL_TECHNIQUES, findBasicFish, findEmptyRectangle, findHiddenSubset, findNakedSubset, findSolutions, findWWing, findXYWing, findXYZWing, isConsistent, solveWithTechniques } from '../dist/core/solver.js';
 import { digSingleCell, generateCompletedGrid } from '../dist/core/generator.js';
 
 const assert = (condition, message) => {
@@ -86,6 +86,24 @@ assertEliminates(findHiddenSubset(candidateMap([
 assertEliminates(findWWing(candidateMap([
   [cellAt(0, 0), [1, 2]], [cellAt(3, 3), [1, 2]], [cellAt(0, 5), [1]], [cellAt(3, 5), [1]], [cellAt(0, 3), [2]],
 ])), 'W-Wing', cellAt(0, 3), 2);
+assertEliminates(findBasicFish(candidateMap([
+  [cellAt(0, 0), [7]], [cellAt(0, 3), [7]], [cellAt(1, 3), [7]], [cellAt(1, 6), [7]],
+  [cellAt(2, 0), [7]], [cellAt(2, 6), [7]], [cellAt(3, 0), [7]],
+]), 3), 'Swordfish', cellAt(3, 0), 7);
+assertEliminates(findBasicFish(candidateMap([
+  [cellAt(0, 0), [7]], [cellAt(3, 0), [7]], [cellAt(0, 3), [7]], [cellAt(1, 3), [7]],
+  [cellAt(0, 6), [7]], [cellAt(1, 6), [7]], [cellAt(3, 9), [7]],
+]), 3), 'Swordfish', cellAt(3, 9), 7);
+assertEliminates(findBasicFish(candidateMap([
+  [cellAt(0, 0), [8]], [cellAt(0, 3), [8]], [cellAt(1, 3), [8]], [cellAt(1, 4), [8]],
+  [cellAt(2, 4), [8]], [cellAt(2, 5), [8]], [cellAt(3, 0), [8]], [cellAt(3, 5), [8]],
+  [cellAt(4, 0), [8]],
+]), 4), 'Jellyfish', cellAt(4, 0), 8);
+assertEliminates(findBasicFish(candidateMap([
+  [cellAt(0, 0), [8]], [cellAt(3, 0), [8]], [cellAt(0, 3), [8]], [cellAt(1, 3), [8]],
+  [cellAt(1, 4), [8]], [cellAt(2, 4), [8]], [cellAt(2, 5), [8]], [cellAt(3, 5), [8]],
+  [cellAt(3, 9), [8]],
+]), 4), 'Jellyfish', cellAt(3, 9), 8);
 assert(findWWing(candidateMap([
   [cellAt(0, 3), [3, 6]], [cellAt(2, 0), [3, 6]], [cellAt(0, 2), [1, 6]],
   [cellAt(2, 3), [3]], [cellAt(2, 5), [3]],

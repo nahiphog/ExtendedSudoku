@@ -14,6 +14,8 @@ export type Technique =
   | 'Hidden Triple'
   | 'Naked Quad'
   | 'Hidden Quad'
+  | 'Swordfish'
+  | 'Jellyfish'
   | 'Empty Rectangle'
   | 'XY-Wing'
   | 'XYZ-Wing'

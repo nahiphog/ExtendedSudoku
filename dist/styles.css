@@ -127,4 +127,9 @@ h2, h3 { color: #394080; }
 .simulation-option { margin: 14px 0; padding: 13px 15px; border-radius: 12px; background: var(--mist); }
 .simulation-option label { color: #30376e; font-weight: 700; }
 .simulation-option select { margin-left: 8px; padding: 6px 8px; border: 1px solid #b9c1e7; border-radius: 8px; color: var(--ink); background: #fff; font: inherit; }
+.validator-actions { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.validator-actions .generate { width: auto; margin: 0; padding: 10px; box-shadow: none; }
+.solution-copy-actions { width: fit-content; margin: 14px 0 0; }
+#simulation-toggle { display: inline-block; width: fit-content; padding-inline: 20px; }
 @media (max-width: 720px) { body { padding: 82px 10px 28px; } .site-title { left: 92px; text-align: right; } .layout { padding: 18px; border-radius: 18px; } }
+@media (max-width: 540px) { .validator-actions { grid-template-columns: 1fr; } }
