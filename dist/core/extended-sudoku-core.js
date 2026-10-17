@@ -530,19 +530,6 @@ const findEmptyRectangle = (candidates) => {
         }
     return null;
 };
-const nextLogicalMove = (candidates) => (ENABLED_LOGICAL_TECHNIQUES.has('Naked Single') ? findNakedSingle(candidates) : null)
-    ?? (ENABLED_LOGICAL_TECHNIQUES.has('Hidden Single') ? findHiddenSingle(candidates) : null)
-    ?? (ENABLED_LOGICAL_TECHNIQUES.has('Locked Candidates') ? findLockedCandidates(candidates) : null)
-    ?? (ENABLED_LOGICAL_TECHNIQUES.has('Naked Pair') ? findNakedSubset(candidates, 2) : null)
-    ?? (ENABLED_LOGICAL_TECHNIQUES.has('Naked Triple') ? findNakedSubset(candidates, 3) : null)
-    ?? (ENABLED_LOGICAL_TECHNIQUES.has('Hidden Triple') ? findHiddenSubset(candidates, 3) : null)
-    ?? (ENABLED_LOGICAL_TECHNIQUES.has('Empty Rectangle') ? findEmptyRectangle(candidates) : null)
-    ?? (ENABLED_LOGICAL_TECHNIQUES.has('XY-Wing') ? findXYWing(candidates) : null)
-    ?? (ENABLED_LOGICAL_TECHNIQUES.has('XYZ-Wing') ? findXYZWing(candidates) : null)
-    ?? (ENABLED_LOGICAL_TECHNIQUES.has('W-Wing') ? findWWing(candidates) : null)
-    ?? (ENABLED_LOGICAL_TECHNIQUES.has('Hidden Pair') ? findHiddenSubset(candidates, 2) : null)
-    ?? (ENABLED_LOGICAL_TECHNIQUES.has('Naked Quad') ? findNakedSubset(candidates, 4) : null)
-    ?? (ENABLED_LOGICAL_TECHNIQUES.has('Hidden Quad') ? findHiddenSubset(candidates, 4) : null);
 const applyMove = (values, candidates, move) => {
     if (move.cell !== undefined && move.digit !== undefined) {
         applyPlacement(values, candidates, move.cell, move.digit);
@@ -575,6 +562,60 @@ const moveMatchesSolution = (move, candidates, solution) => {
     }
     return null;
 };
+/** SudokUI / HoDoKu scores used to prefer the simplest available deduction. */
+const LOGICAL_TECHNIQUE_SCORES = Object.freeze({
+    'Naked Single': 4,
+    'Hidden Single': 14,
+    'Locked Candidates': 50,
+    'Naked Pair': 60,
+    'Hidden Pair': 70,
+    'Naked Triple': 80,
+    'Hidden Triple': 100,
+    'Naked Quad': 120,
+    'Empty Rectangle': 120,
+    'Hidden Quad': 150,
+    'W-Wing': 150,
+    'XY-Wing': 160,
+    'XYZ-Wing': 180,
+});
+// The order is only a deterministic tie-breaker. Unlike the old `??` chain,
+// every enabled technique is evaluated before the lowest-score move is chosen.
+const LOGICAL_TECHNIQUES = [
+    { technique: 'Naked Single', difficulty: 4, find: findNakedSingle },
+    { technique: 'Hidden Single', difficulty: 14, find: findHiddenSingle },
+    { technique: 'Locked Candidates', difficulty: 50, find: findLockedCandidates },
+    { technique: 'Naked Pair', difficulty: 60, find: (candidates) => findNakedSubset(candidates, 2) },
+    { technique: 'Hidden Pair', difficulty: 70, find: (candidates) => findHiddenSubset(candidates, 2) },
+    { technique: 'Naked Triple', difficulty: 80, find: (candidates) => findNakedSubset(candidates, 3) },
+    { technique: 'Hidden Triple', difficulty: 100, find: (candidates) => findHiddenSubset(candidates, 3) },
+    { technique: 'Naked Quad', difficulty: 120, find: (candidates) => findNakedSubset(candidates, 4) },
+    { technique: 'Empty Rectangle', difficulty: 120, find: findEmptyRectangle },
+    { technique: 'Hidden Quad', difficulty: 150, find: (candidates) => findHiddenSubset(candidates, 4) },
+    { technique: 'W-Wing', difficulty: 150, find: findWWing },
+    { technique: 'XY-Wing', difficulty: 160, find: findXYWing },
+    { technique: 'XYZ-Wing', difficulty: 180, find: findXYZWing },
+];
+const moveLeavesViableState = (values, candidates, move) => {
+    const simulatedValues = [...values];
+    const simulatedCandidates = cloneCandidates(candidates);
+    applyMove(simulatedValues, simulatedCandidates, move);
+    return candidateStateIsViable(simulatedValues, simulatedCandidates);
+};
+const nextLogicalMove = (values, candidates, solution) => {
+    let selected = null;
+    for (const definition of LOGICAL_TECHNIQUES) {
+        if (!ENABLED_LOGICAL_TECHNIQUES.has(definition.technique))
+            continue;
+        const move = definition.find(candidates);
+        // A rejected proposal must not abort the walkthrough or hide another,
+        // valid technique that is available from the same candidate state.
+        if (!move || moveMatchesSolution(move, candidates, solution) || !moveLeavesViableState(values, candidates, move))
+            continue;
+        if (!selected || definition.difficulty < selected.difficulty)
+            selected = { move, difficulty: definition.difficulty };
+    }
+    return selected?.move ?? null;
+};
 /**
  * Applies supported human-style techniques until they are exhausted.  Only then,
  * when allowed, it records remaining placements as a clearly-labelled brute-force
@@ -600,12 +641,12 @@ const solveWithTechniques = (input, allowBruteForce = true) => {
         return null;
     };
     const exhaustLogicalMoves = () => {
-        let move = nextLogicalMove(candidates);
+        let move = nextLogicalMove(values, candidates, solution);
         while (move) {
             const error = recordMove(move);
             if (error)
                 return error;
-            move = nextLogicalMove(candidates);
+            move = nextLogicalMove(values, candidates, solution);
         }
         return null;
     };
