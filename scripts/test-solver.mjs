@@ -72,6 +72,12 @@ for (const technique of ['Hidden Pair', 'Naked Quad', 'Hidden Quad']) {
   assert(!ENABLED_LOGICAL_TECHNIQUES.has(technique), `${technique} must remain gated until it has direct unique-puzzle regression coverage`);
 }
 
+const fallbackFixture = solveWithTechniques(parsePuzzle(verifyFixtures[1]).values, true);
+const firstBruteForce = fallbackFixture.moves.findIndex((move) => move.technique === 'Brute force');
+assert(firstBruteForce >= 0, 'the fallback fixture should require at least one brute-force placement');
+assert(fallbackFixture.moves.slice(firstBruteForce + 1).some((move) => move.technique !== 'Brute force'),
+  'the solver must resume logical techniques after its first brute-force placement');
+
 const blackCellInput = `${fixture.slice(0, 9)}1${fixture.slice(10)}`;
 assert(parsePuzzle(blackCellInput).errors.length > 0, 'a digit in a black cell must be rejected');
 

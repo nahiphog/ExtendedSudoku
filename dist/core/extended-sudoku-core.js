@@ -479,46 +479,55 @@ const solveWithTechniques = (input, allowBruteForce = true) => {
     const values = [...input];
     const candidates = buildCandidates(values);
     const moves = [];
-    let move = nextLogicalMove(candidates);
-    while (move) {
+    const recordMove = (move) => {
         const moveError = moveMatchesSolution(move, candidates, solution);
         if (moveError)
-            return {
-                solution, solutionCount: countSolutions(input), moves, usedBruteForce: false,
-                walkthroughValid: false, walkthroughError: moveError,
-            };
+            return moveError;
         applyMove(values, candidates, move);
         if (!candidateStateIsViable(values, candidates))
-            return {
-                solution, solutionCount: countSolutions(input), moves, usedBruteForce: false,
-                walkthroughValid: false, walkthroughError: `${move.technique} leaves an impossible candidate state.`,
-            };
+            return `${move.technique} leaves an impossible candidate state.`;
         moves.push(move);
-        move = nextLogicalMove(candidates);
-    }
+        return null;
+    };
+    const exhaustLogicalMoves = () => {
+        let move = nextLogicalMove(candidates);
+        while (move) {
+            const error = recordMove(move);
+            if (error)
+                return error;
+            move = nextLogicalMove(candidates);
+        }
+        return null;
+    };
+    const invalidResult = (walkthroughError) => ({
+        solution, solutionCount: countSolutions(input), moves, usedBruteForce: false,
+        walkthroughValid: false, walkthroughError,
+    });
+    const initialError = exhaustLogicalMoves();
+    if (initialError)
+        return invalidResult(initialError);
     if (ACTIVE_CELLS.every((cell) => values[cell])) {
         return { solution: values, solutionCount: 1, moves, usedBruteForce: false, walkthroughValid: true };
     }
     if (!allowBruteForce)
         return { solution, solutionCount: countSolutions(input), moves, usedBruteForce: false, walkthroughValid: true };
-    for (const cell of ACTIVE_CELLS) {
-        if (values[cell])
-            continue;
+    // A fallback placement is an assumption. After every assumption, exhaust the
+    // logical repertoire again; downstream deductions must not be labelled brute
+    // force merely because they follow an earlier guess.
+    while (!ACTIVE_CELLS.every((cell) => values[cell])) {
+        const cell = ACTIVE_CELLS.filter((candidate) => !values[candidate])
+            .sort((left, right) => (candidates.get(left)?.size ?? 10) - (candidates.get(right)?.size ?? 10))[0];
         const digit = asDigit(solution[cell]);
         const available = candidates.get(cell);
         if (!available?.has(digit))
-            return {
-                solution, solutionCount: countSolutions(input), moves, usedBruteForce: false,
-                walkthroughValid: false, walkthroughError: `The fallback value was missing from the recorded candidate state at ${describeCell(cell)}.`,
-            };
+            return invalidResult(`The fallback value was missing from the recorded candidate state at ${describeCell(cell)}.`);
         const fallback = placementMove('Brute force', cell, digit, [cell], `Trial and error places ${digit} at ${describeCell(cell)} after logical techniques are exhausted.`);
-        applyMove(values, candidates, fallback);
-        moves.push(fallback);
-        if (!candidateStateIsViable(values, candidates))
-            return {
-                solution, solutionCount: countSolutions(input), moves, usedBruteForce: false,
-                walkthroughValid: false, walkthroughError: `Brute force leaves an impossible candidate state at ${describeCell(cell)}.`,
-            };
+        const fallbackError = recordMove(fallback);
+        if (fallbackError)
+            return invalidResult(fallbackError);
+        const logicalError = exhaustLogicalMoves();
+        if (logicalError)
+            return invalidResult(logicalError);
     }
     return { solution: values, solutionCount: countSolutions(input), moves, usedBruteForce: true, walkthroughValid: true };
 };
