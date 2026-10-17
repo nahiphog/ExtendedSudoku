@@ -9,7 +9,7 @@ const validatorStatus = document.querySelector('#validator-status');
 const solutions = document.querySelector('#solutions');
 const techniqueWeights = {
     'Snyder Notation': 0, 'Naked Single': 4, 'Hidden Single': 14, 'Locked Candidates': 50,
-    'Naked Pair': 60, 'Hidden Pair': 70, 'Naked Quad': 120, 'Hidden Quad': 150,
+    'Naked Pair': 60, 'Naked Triple': 80, 'Hidden Pair': 70, 'Hidden Triple': 100, 'Naked Quad': 120, 'Hidden Quad': 150,
     'Empty Rectangle': 120, 'XY-Wing': 160, 'XYZ-Wing': 180, 'W-Wing': 150, 'Brute force': 10000,
 };
 const createCell = (cell, values, givens, candidates, eliminated = new Set(), highlighted = new Set()) => {

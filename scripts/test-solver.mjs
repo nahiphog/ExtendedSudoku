@@ -1,6 +1,6 @@
 import { cellAt, parsePuzzle } from '../dist/core/grid.js';
 import { applyPlacement, buildCandidates, removeCandidate } from '../dist/core/candidates.js';
-import { ENABLED_LOGICAL_TECHNIQUES, findEmptyRectangle, findSolutions, findWWing, findXYWing, findXYZWing, isConsistent, solveWithTechniques } from '../dist/core/solver.js';
+import { ENABLED_LOGICAL_TECHNIQUES, findEmptyRectangle, findHiddenSubset, findNakedSubset, findSolutions, findWWing, findXYWing, findXYZWing, isConsistent, solveWithTechniques } from '../dist/core/solver.js';
 import { digSingleCell, generateCompletedGrid } from '../dist/core/generator.js';
 
 const assert = (condition, message) => {
@@ -77,6 +77,12 @@ assertEliminates(findXYWing(candidateMap([
 assertEliminates(findXYZWing(candidateMap([
   [cellAt(0, 0), [1, 2, 3]], [cellAt(0, 1), [1, 3]], [cellAt(1, 0), [2, 3]], [cellAt(1, 1), [3]],
 ])), 'XYZ-Wing', cellAt(1, 1), 3);
+assertEliminates(findNakedSubset(candidateMap([
+  [cellAt(0, 0), [1, 2]], [cellAt(0, 1), [2, 3]], [cellAt(0, 2), [1, 3]], [cellAt(0, 3), [1, 4]],
+]), 3), 'Naked Triple', cellAt(0, 3), 1);
+assertEliminates(findHiddenSubset(candidateMap([
+  [cellAt(0, 0), [1, 2, 4]], [cellAt(0, 1), [1, 3, 5]], [cellAt(0, 2), [2, 3, 6]],
+]), 3), 'Hidden Triple', cellAt(0, 0), 4);
 assertEliminates(findWWing(candidateMap([
   [cellAt(0, 0), [1, 2]], [cellAt(3, 3), [1, 2]], [cellAt(0, 5), [1]], [cellAt(3, 5), [1]], [cellAt(0, 3), [2]],
 ])), 'W-Wing', cellAt(0, 3), 2);
@@ -109,6 +115,19 @@ const wWingRegression = '8....2......9..5.7.......54.9...2...5..4.6....8..6.....
 const wWingRegressionResult = solveWithTechniques(parsePuzzle(wWingRegression).values, true);
 assert(wWingRegressionResult.solution !== null, 'W-Wing regression puzzle should solve');
 assert(wWingRegressionResult.walkthroughValid, 'W-Wing regression walkthrough must complete without an invalid deduction');
+
+// A Naked Triple must be considered before the advanced wing patterns. This
+// puzzle previously displayed an unnecessary XYZ-Wing at the corresponding
+// point in its walkthrough.
+const triplePriorityFixture = '.63..1......4.......8......2.7........2......7.....8........9.1362........4...2.9.1.65.....1...7.......6..9.....9....46.....189.............6...';
+const triplePriorityResult = solveWithTechniques(parsePuzzle(triplePriorityFixture).values, true);
+assert(triplePriorityResult.walkthroughValid, 'Naked Triple priority fixture walkthrough should be valid');
+const firstNakedTriple = triplePriorityResult.moves.findIndex((move) => move.technique === 'Naked Triple');
+const firstAdvancedPattern = triplePriorityResult.moves.findIndex((move) =>
+  ['Empty Rectangle', 'XY-Wing', 'XYZ-Wing', 'W-Wing'].includes(move.technique));
+assert(firstNakedTriple >= 0, 'Naked Triple priority fixture should exercise Naked Triple');
+assert(firstAdvancedPattern < 0 || firstNakedTriple < firstAdvancedPattern,
+  'Naked Triple must be selected before an available advanced pattern');
 
 const blackCellInput = `${fixture.slice(0, 9)}1${fixture.slice(10)}`;
 assert(parsePuzzle(blackCellInput).errors.length > 0, 'a digit in a black cell must be rejected');

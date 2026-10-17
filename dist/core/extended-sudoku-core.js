@@ -122,10 +122,10 @@ const applyPlacement = (values, candidates, cell, digit) => {
 
 const ALL_DIGITS_MASK = 0x1ff;
 // A technique is enabled only after it has direct, unique-puzzle regression
-// coverage. Hidden Pair and the quad rules remain implemented but gated until
-// their own trustworthy Extended Sudoku fixtures are added.
+// coverage. Pair and quad variants remain gated until their own trustworthy
+// Extended Sudoku fixtures are added.
 const ENABLED_LOGICAL_TECHNIQUES = new Set([
-    'Naked Single', 'Hidden Single', 'Locked Candidates', 'Naked Pair',
+    'Naked Single', 'Hidden Single', 'Locked Candidates', 'Naked Pair', 'Naked Triple', 'Hidden Triple',
     'Empty Rectangle', 'XY-Wing', 'XYZ-Wing', 'W-Wing',
 ]);
 const digitMask = (digit) => 1 << (digit - 1);
@@ -377,7 +377,7 @@ const findLockedCandidates = (candidates) => {
     return null;
 };
 const findNakedSubset = (candidates, size) => {
-    const technique = size === 2 ? 'Naked Pair' : 'Naked Quad';
+    const technique = size === 2 ? 'Naked Pair' : size === 3 ? 'Naked Triple' : 'Naked Quad';
     for (let unitIndex = 0; unitIndex < UNITS.length; unitIndex += 1) {
         const unit = UNITS[unitIndex];
         const unsolved = unit.filter((cell) => {
@@ -397,13 +397,13 @@ const findNakedSubset = (candidates, size) => {
                 });
             });
             if (eliminations.length)
-                return eliminationMove(technique, eliminations, sourceCells, `${size === 2 ? 'A naked pair' : 'A naked quad'} in ${unitLabel(unitIndex)} removes its digits from other cells in that unit.`);
+                return eliminationMove(technique, eliminations, sourceCells, `A naked ${size === 2 ? 'pair' : size === 3 ? 'triple' : 'quad'} in ${unitLabel(unitIndex)} removes its digits from other cells in that unit.`);
         }
     }
     return null;
 };
 const findHiddenSubset = (candidates, size) => {
-    const technique = size === 2 ? 'Hidden Pair' : 'Hidden Quad';
+    const technique = size === 2 ? 'Hidden Pair' : size === 3 ? 'Hidden Triple' : 'Hidden Quad';
     for (let unitIndex = 0; unitIndex < UNITS.length; unitIndex += 1) {
         const unit = UNITS[unitIndex];
         for (const digits of combinations(DIGITS, size)) {
@@ -422,7 +422,7 @@ const findHiddenSubset = (candidates, size) => {
                     eliminations.push({ cell, digit: candidate });
             }));
             if (eliminations.length)
-                return eliminationMove(technique, eliminations, sourceCells, `${size === 2 ? 'A hidden pair' : 'A hidden quad'} in ${unitLabel(unitIndex)} removes other candidates from its cells.`);
+                return eliminationMove(technique, eliminations, sourceCells, `A hidden ${size === 2 ? 'pair' : size === 3 ? 'triple' : 'quad'} in ${unitLabel(unitIndex)} removes other candidates from its cells.`);
         }
     }
     return null;
@@ -534,6 +534,8 @@ const nextLogicalMove = (candidates) => (ENABLED_LOGICAL_TECHNIQUES.has('Naked S
     ?? (ENABLED_LOGICAL_TECHNIQUES.has('Hidden Single') ? findHiddenSingle(candidates) : null)
     ?? (ENABLED_LOGICAL_TECHNIQUES.has('Locked Candidates') ? findLockedCandidates(candidates) : null)
     ?? (ENABLED_LOGICAL_TECHNIQUES.has('Naked Pair') ? findNakedSubset(candidates, 2) : null)
+    ?? (ENABLED_LOGICAL_TECHNIQUES.has('Naked Triple') ? findNakedSubset(candidates, 3) : null)
+    ?? (ENABLED_LOGICAL_TECHNIQUES.has('Hidden Triple') ? findHiddenSubset(candidates, 3) : null)
     ?? (ENABLED_LOGICAL_TECHNIQUES.has('Empty Rectangle') ? findEmptyRectangle(candidates) : null)
     ?? (ENABLED_LOGICAL_TECHNIQUES.has('XY-Wing') ? findXYWing(candidates) : null)
     ?? (ENABLED_LOGICAL_TECHNIQUES.has('XYZ-Wing') ? findXYZWing(candidates) : null)
