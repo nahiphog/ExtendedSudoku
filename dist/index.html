@@ -10,432 +10,56 @@
     <main class="layout">
       <h1>Extended Sudoku Maker</h1>
       <a class="techniques-link" href="./techniques.html">All techniques</a>
+      <a class="techniques-link" href="./validator.html">Verify a puzzle</a>
+      <label class="digging-mode" for="digging-mode">Digging mode <select id="digging-mode"><option value="single">Single-cell digging</option><option value="dual" selected>Dual-cell digging</option></select></label>
       <button id="generate" class="generate generate-top" type="button">Generate</button>
       <section id="final-section" hidden>
         <h2>Final grid</h2>
-        <div id="final-grid" class="grid final-grid" role="grid" aria-label="Generated Extended Sudoku puzzle"></div>
+        <div class="final-workspace">
+          <div class="final-grid-shell"><div id="walkthrough-board" class="walkthrough-board">
+            <div class="top-guide" aria-hidden="true"><span id="top-arrow" class="guide-arrow">▼</span></div>
+            <div class="left-guide" aria-hidden="true"><span id="left-arrow" class="guide-arrow">▶</span></div>
+            <div id="final-grid" class="grid final-grid" role="grid" aria-label="Generated Extended Sudoku puzzle"></div>
+          </div></div>
+          <section class="statistics" aria-labelledby="statistics-title">
+            <h3 id="statistics-title">Puzzle statistics</h3>
+            <p id="generation-summary"></p>
+            <h3>Techniques used</h3>
+            <table>
+              <thead><tr><th scope="col">Technique</th><th scope="col">Steps</th></tr></thead>
+              <tbody id="technique-table"></tbody>
+            </table>
+            <label for="solve-step-select">Solve replay</label>
+            <p class="snyder-key">Small blue digits are candidate (Snyder) marks in every empty playable cell. Small red digits were eliminated by the displayed step and disappear at the next step.</p>
+            <div class="step-controls" aria-label="Solve replay navigation">
+              <button id="step-start" type="button" aria-label="Go to step 0">&lt;&lt;</button>
+              <button id="step-previous" type="button" aria-label="Go to previous step">&lt;</button>
+              <select id="solve-step-select" aria-label="Choose solve step"></select>
+              <button id="step-next" type="button" aria-label="Go to next step">&gt;</button>
+              <button id="step-last" type="button" aria-label="Go to last step">&gt;&gt;</button>
+            </div>
+            <output id="solve-step-label" class="solve-step-label" aria-live="polite"></output>
+          </section>
+        </div>
         <div class="actions" aria-label="Copy final grid">
           <button id="copy-final-string" type="button">Copy final string</button>
           <button id="copy-final-image" type="button">Copy final image</button>
         </div>
-        <section class="statistics" aria-labelledby="statistics-title">
-          <h3 id="statistics-title">Puzzle statistics</h3>
-          <p id="generation-summary"></p>
-          <h3>Techniques used</h3>
-          <table>
-            <thead><tr><th scope="col">Technique</th><th scope="col">Steps</th></tr></thead>
-            <tbody id="technique-table"></tbody>
-          </table>
-          <label for="solve-step-select">Solve replay</label>
-          <p class="snyder-key">Small black digits are candidate (Snyder) marks in every empty playable cell. Small red digits were eliminated by the displayed step and disappear at the next step.</p>
-          <div class="step-controls" aria-label="Solve replay navigation">
-            <button id="step-start" type="button" aria-label="Go to step 0">&lt;&lt;</button>
-            <button id="step-previous" type="button" aria-label="Go to previous step">&lt;</button>
-            <select id="solve-step-select" aria-label="Choose solve step"></select>
-            <button id="step-next" type="button" aria-label="Go to next step">&gt;</button>
-            <button id="step-last" type="button" aria-label="Go to last step">&gt;&gt;</button>
-          </div>
-          <output id="solve-step-label" class="solve-step-label" aria-live="polite"></output>
-        </section>
       </section>
-      <h2>Completed grid</h2>
-      <div id="grid" class="grid" role="grid" aria-label="12 by 12 Extended Sudoku grid"></div>
-      <div id="copy-actions" class="actions" hidden>
-        <button id="copy-string" type="button">Copy string</button>
-        <button id="copy-image" type="button">Copy image</button>
-      </div>
-      <output id="well" class="well" aria-live="polite">Select a white cell</output>
+      <section class="completed-section">
+        <div class="completed-heading"><h2>Completed grid</h2><button id="toggle-completed" type="button" aria-expanded="true">Hide</button></div>
+        <div id="completed-content">
+          <div id="grid" class="grid" role="grid" aria-label="12 by 12 Extended Sudoku grid"></div>
+          <div id="copy-actions" class="actions" hidden>
+            <button id="copy-string" type="button">Copy string</button>
+            <button id="copy-image" type="button">Copy image</button>
+          </div>
+          <output id="well" class="well" aria-live="polite">Select a white cell</output>
+        </div>
+      </section>
     </main>
     <script src="./extended-engine.js"></script>
-    <script>
-      const greyAreas = [[1, 10], [4, 7], [7, 4], [10, 1]];
-      const grid = document.querySelector('#grid');
-      const well = document.querySelector('#well');
-      const generator = document.querySelector('#generate');
-      const actions = document.querySelector('#copy-actions');
-      const stringButton = document.querySelector('#copy-string');
-      const imageButton = document.querySelector('#copy-image');
-      const finalSection = document.querySelector('#final-section');
-      const finalGrid = document.querySelector('#final-grid');
-      const summary = document.querySelector('#generation-summary');
-      const finalStringButton = document.querySelector('#copy-final-string');
-      const finalImageButton = document.querySelector('#copy-final-image');
-      const techniqueTable = document.querySelector('#technique-table');
-      const stepSelect = document.querySelector('#solve-step-select');
-      const stepStartButton = document.querySelector('#step-start');
-      const stepPreviousButton = document.querySelector('#step-previous');
-      const stepNextButton = document.querySelector('#step-next');
-      const stepLastButton = document.querySelector('#step-last');
-      const solveStepLabel = document.querySelector('#solve-step-label');
-      const playableCells = [];
-      const values = Array.from({ length: 12 }, () => Array(12).fill(null));
-      let finalPuzzle = null;
-      let solveTrace = [];
-      const isBlackCell = cell => {
-        const row = Math.floor(cell / 12) + 1;
-        const column = cell % 12 + 1;
-        return greyAreas.some(([startRow, startColumn]) => row >= startRow && row < startRow + 3 && column >= startColumn && column < startColumn + 3);
-      };
-      const layout = window.ExtendedEngine.buildLayout(isBlackCell);
-      for (let row = 1; row <= 12; row += 1) {
-        for (let column = 1; column <= 12; column += 1) {
-          const grey = greyAreas.some(([startRow, startColumn]) =>
-            row >= startRow && row < startRow + 3 && column >= startColumn && column < startColumn + 3
-          );
-          const cell = document.createElement(grey ? 'div' : 'button');
-          cell.className = `cell${grey ? ' grey' : ''}${column % 3 === 0 ? ' v-divider' : ''}${row % 3 === 0 ? ' h-divider' : ''}`;
-          cell.setAttribute('role', 'gridcell');
-          if (!grey) {
-            cell.type = 'button';
-            cell.dataset.row = row;
-            cell.dataset.column = column;
-            const box = Math.floor((row - 1) / 3) * 4 + Math.floor((column - 1) / 3) + 1;
-            cell.setAttribute('aria-label', `Row ${row}, column ${column}, Box ${box}`);
-            cell.addEventListener('click', () => {
-              well.textContent = `Row ${row}, column ${column} · Box ${box}`;
-            });
-            playableCells.push({ cell, row, column, box });
-          }
-          grid.append(cell);
-        }
-      }
-      generator.addEventListener('click', () => {
-        const startedAt = performance.now();
-        const shuffle = input => {
-          const result = [...input];
-          for (let index = result.length - 1; index > 0; index -= 1) {
-            const swapIndex = Math.floor(Math.random() * (index + 1));
-            [result[index], result[swapIndex]] = [result[swapIndex], result[index]];
-          }
-          return result;
-        };
-        const solution = Array.from({ length: 12 }, () => Array(12).fill(0));
-        const rowMasks = Array(12).fill(0);
-        const columnMasks = Array(12).fill(0);
-        const boxMasks = Array(16).fill(0);
-        const solve = remaining => {
-          if (remaining === 0) return true;
-          let best;
-          let candidates;
-          for (const entry of playableCells) {
-            const { row, column, box } = entry;
-            if (solution[row - 1][column - 1]) continue;
-            const mask = 0x1ff & ~(rowMasks[row - 1] | columnMasks[column - 1] | boxMasks[box - 1]);
-            const options = [];
-            for (let digit = 1; digit <= 9; digit += 1) if (mask & (1 << (digit - 1))) options.push(digit);
-            if (!options.length) return false;
-            if (!best || options.length < candidates.length) {
-              best = entry;
-              candidates = options;
-              if (options.length === 1) break;
-            }
-          }
-          for (const digit of shuffle(candidates)) {
-            const { row, column, box } = best;
-            const bit = 1 << (digit - 1);
-            solution[row - 1][column - 1] = digit;
-            rowMasks[row - 1] |= bit;
-            columnMasks[column - 1] |= bit;
-            boxMasks[box - 1] |= bit;
-            if (solve(remaining - 1)) return true;
-            solution[row - 1][column - 1] = 0;
-            rowMasks[row - 1] ^= bit;
-            columnMasks[column - 1] ^= bit;
-            boxMasks[box - 1] ^= bit;
-          }
-          return false;
-        };
-        solve(playableCells.length);
-        for (let digit = 1; digit <= 9; digit += 1) {
-          for (let box = 1; box <= 16; box += 1) {
-            const entry = playableCells.find(cell => cell.box === box && solution[cell.row - 1][cell.column - 1] === digit);
-            if (!entry) continue;
-            entry.cell.textContent = digit;
-            values[entry.row - 1][entry.column - 1] = digit;
-          }
-        }
-        const complete = solution.flat();
-        const puzzle = [...complete];
-        let removed = 0;
-        for (const entry of shuffle(playableCells)) {
-          const cell = (entry.row - 1) * 12 + entry.column - 1;
-          const saved = puzzle[cell];
-          puzzle[cell] = 0;
-          if (window.ExtendedEngine.countSolutions(puzzle, layout, 2) === 1) {
-            removed += 1;
-          } else {
-            puzzle[cell] = saved;
-          }
-        }
-        finalPuzzle = puzzle;
-        solveTrace = buildSolveTrace(puzzle, complete);
-        renderFinalGrid(0);
-        const elapsed = ((performance.now() - startedAt) / 1000).toFixed(2);
-        const searchSteps = solveTrace.filter(step => step.technique === 'Constraint search (MRV)').length;
-        const difficultyRating = Math.min(100, Math.max(1, Math.round((removed / 108) * 55 + (searchSteps / Math.max(1, solveTrace.length)) * 45)));
-        summary.textContent = `Difficulty rating: ${difficultyRating}/100 · Unique minimal puzzle · ${108 - removed} clues · ${elapsed}s`;
-        renderTechniqueTable(solveTrace);
-        populateStepMenu();
-        setReplayStep(0);
-        finalSection.hidden = false;
-        actions.hidden = false;
-        well.textContent = 'Generated a valid Extended Sudoku grid';
-      });
-
-      function candidatesFor(values, cell) {
-        const row = Math.floor(cell / 12);
-        const column = cell % 12;
-        const boxRow = Math.floor(row / 3) * 3;
-        const boxColumn = Math.floor(column / 3) * 3;
-        const used = new Set();
-        for (let index = 0; index < 12; index += 1) {
-          used.add(values[row * 12 + index]);
-          used.add(values[index * 12 + column]);
-        }
-        for (let boxRowOffset = 0; boxRowOffset < 3; boxRowOffset += 1) {
-          for (let boxColumnOffset = 0; boxColumnOffset < 3; boxColumnOffset += 1) {
-            used.add(values[(boxRow + boxRowOffset) * 12 + boxColumn + boxColumnOffset]);
-          }
-        }
-        return Array.from({ length: 9 }, (_, index) => index + 1).filter(digit => !used.has(digit));
-      }
-
-      function buildSolveTrace(puzzle, complete) {
-        const working = [...puzzle];
-        const trace = [];
-        while (true) {
-          let best = null;
-          for (const entry of playableCells) {
-            const cell = (entry.row - 1) * 12 + entry.column - 1;
-            if (working[cell]) continue;
-            const candidates = candidatesFor(working, cell);
-            if (!best || candidates.length < best.candidates.length) best = { cell, candidates };
-          }
-          if (!best) return trace;
-          const digit = complete[best.cell];
-          trace.push({ cell: best.cell, digit, technique: best.candidates.length === 1 ? 'Naked Single' : 'Constraint search (MRV)' });
-          working[best.cell] = digit;
-        }
-      }
-
-      function renderFinalGrid(step) {
-        if (!finalPuzzle) return;
-        const displayed = replayValues(step);
-        const previous = step ? replayValues(step - 1) : null;
-        const notes = snyderNotesFor(displayed);
-        const eliminated = previous ? eliminatedSnyderNotes(snyderNotesFor(previous), notes, displayed) : new Map();
-        finalGrid.replaceChildren();
-        for (let cell = 0; cell < 144; cell += 1) {
-          const row = Math.floor(cell / 12) + 1;
-          const column = cell % 12 + 1;
-          const tile = document.createElement('div');
-          tile.className = `cell${isBlackCell(cell) ? ' grey' : ''}${column % 3 === 0 ? ' v-divider' : ''}${row % 3 === 0 ? ' h-divider' : ''}${step && solveTrace[step - 1].cell === cell ? ' step-highlight' : ''}`;
-          tile.setAttribute('role', 'gridcell');
-          if (!isBlackCell(cell) && displayed[cell]) {
-            const number = document.createElement('span');
-            number.className = 'placed-number';
-            number.textContent = displayed[cell];
-            tile.append(number);
-          } else if (!isBlackCell(cell)) {
-            const candidateNotes = document.createElement('span');
-            candidateNotes.className = 'candidate-notes';
-            for (let digit = 1; digit <= 9; digit += 1) {
-              if (!notes.get(cell)?.has(digit) && !eliminated.get(cell)?.has(digit)) continue;
-              const note = document.createElement('span');
-              note.className = `candidate candidate-${digit}${eliminated.get(cell)?.has(digit) ? ' eliminated' : ''}`;
-              note.textContent = digit;
-              candidateNotes.append(note);
-            }
-            tile.append(candidateNotes);
-          }
-          finalGrid.append(tile);
-        }
-      }
-
-      function replayValues(step) {
-        const displayed = [...finalPuzzle];
-        solveTrace.slice(0, step).forEach(({ cell, digit }) => { displayed[cell] = digit; });
-        return displayed;
-      }
-
-      function snyderNotesFor(currentValues) {
-        const notes = new Map();
-        playableCells.forEach(({ row, column }) => {
-          const cell = (row - 1) * 12 + column - 1;
-          if (!currentValues[cell]) notes.set(cell, new Set(candidatesFor(currentValues, cell)));
-        });
-        return notes;
-      }
-
-      function eliminatedSnyderNotes(previousNotes, currentNotes, displayed) {
-        const eliminated = new Map();
-        previousNotes.forEach((digits, cell) => {
-          if (displayed[cell]) return;
-          digits.forEach(digit => {
-            if (!currentNotes.get(cell)?.has(digit)) {
-              if (!eliminated.has(cell)) eliminated.set(cell, new Set());
-              eliminated.get(cell).add(digit);
-            }
-          });
-        });
-        return eliminated;
-      }
-
-      function renderTechniqueTable(trace) {
-        const order = ['Naked Single', 'Constraint search (MRV)'];
-        techniqueTable.replaceChildren();
-        order.forEach(technique => {
-          const steps = trace.filter(step => step.technique === technique).length;
-          if (!steps) return;
-          const row = document.createElement('tr');
-          const name = document.createElement('td');
-          const count = document.createElement('td');
-          name.textContent = technique;
-          count.textContent = String(steps);
-          row.append(name, count);
-          techniqueTable.append(row);
-        });
-      }
-
-      function updateSolveLabel(step) {
-        if (!solveTrace.length) {
-          solveStepLabel.textContent = 'No empty cells to replay.';
-          return;
-        }
-        if (step === 0) {
-          solveStepLabel.textContent = `0 / ${solveTrace.length}: starting puzzle. Candidate (Snyder) marks appear in every empty, non-shaded cell.`;
-          return;
-        }
-        const current = solveTrace[step - 1];
-        const row = Math.floor(current.cell / 12) + 1;
-        const column = current.cell % 12 + 1;
-        const box = Math.floor((row - 1) / 3) * 4 + Math.floor((column - 1) / 3) + 1;
-        const displayed = replayValues(step);
-        const eliminated = eliminatedSnyderNotes(snyderNotesFor(replayValues(step - 1)), snyderNotesFor(displayed), displayed);
-        const eliminatedCount = Array.from(eliminated.values()).reduce((total, digits) => total + digits.size, 0);
-        solveStepLabel.textContent = `${step} / ${solveTrace.length}: Row ${row}, column ${column}, Box ${box} is highlighted — place ${current.digit} using ${current.technique}. ${eliminatedCount} Snyder mark${eliminatedCount === 1 ? '' : 's'} ${eliminatedCount === 1 ? 'is' : 'are'} red and will be removed at the next step.`;
-      }
-
-      function populateStepMenu() {
-        stepSelect.replaceChildren();
-        for (let step = 0; step <= solveTrace.length; step += 1) {
-          const option = document.createElement('option');
-          option.value = String(step);
-          option.textContent = `Step ${step}`;
-          stepSelect.append(option);
-        }
-      }
-
-      function setReplayStep(requestedStep) {
-        const step = Math.max(0, Math.min(solveTrace.length, requestedStep));
-        stepSelect.value = String(step);
-        renderFinalGrid(step);
-        updateSolveLabel(step);
-        stepStartButton.disabled = step === 0;
-        stepPreviousButton.disabled = step === 0;
-        stepNextButton.disabled = step === solveTrace.length;
-        stepLastButton.disabled = step === solveTrace.length;
-      }
-
-      stepSelect.addEventListener('change', () => setReplayStep(Number(stepSelect.value)));
-      stepStartButton.addEventListener('click', () => setReplayStep(0));
-      stepPreviousButton.addEventListener('click', () => setReplayStep(Number(stepSelect.value) - 1));
-      stepNextButton.addEventListener('click', () => setReplayStep(Number(stepSelect.value) + 1));
-      stepLastButton.addEventListener('click', () => setReplayStep(solveTrace.length));
-
-      async function copyText(text) {
-        if (navigator.clipboard?.writeText) {
-          await navigator.clipboard.writeText(text);
-          return;
-        }
-        const helper = document.createElement('textarea');
-        helper.value = text;
-        document.body.append(helper);
-        helper.select();
-        document.execCommand('copy');
-        helper.remove();
-      }
-
-      stringButton.addEventListener('click', async () => {
-        try {
-          await copyGridString(values.flat());
-          well.textContent = 'Completed-grid string copied to clipboard';
-        } catch {
-          well.textContent = 'Could not copy the grid string';
-        }
-      });
-
-      imageButton.addEventListener('click', async () => {
-        try {
-          await copyGridImage(values.flat());
-          well.textContent = 'Completed-grid image copied to clipboard';
-        } catch {
-          well.textContent = 'Could not copy the grid image in this browser';
-        }
-      });
-
-      finalStringButton.addEventListener('click', async () => {
-        if (!finalPuzzle) return;
-        try {
-          await copyGridString(finalPuzzle);
-          well.textContent = 'Final-grid string copied to clipboard';
-        } catch {
-          well.textContent = 'Could not copy the final-grid string';
-        }
-      });
-
-      finalImageButton.addEventListener('click', async () => {
-        if (!finalPuzzle) return;
-        try {
-          await copyGridImage(finalPuzzle);
-          well.textContent = 'Final-grid image copied to clipboard';
-        } catch {
-          well.textContent = 'Could not copy the final-grid image in this browser';
-        }
-      });
-
-      async function copyGridString(flatValues) {
-        await copyText(flatValues.map(value => value || '.').join(''));
-      }
-
-      async function copyGridImage(flatValues) {
-        if (!navigator.clipboard?.write || !window.ClipboardItem) throw new Error('unsupported');
-        const size = 720;
-        const outer = 7;
-        const thick = 7;
-        const thin = 1;
-        const cellSize = (size - outer * 2 - thick * 3 - thin * 8) / 12;
-        const canvas = document.createElement('canvas');
-        canvas.width = size;
-        canvas.height = size;
-        const context = canvas.getContext('2d');
-        context.fillStyle = '#000';
-        context.fillRect(0, 0, size, size);
-        context.textAlign = 'center';
-        context.textBaseline = 'middle';
-        context.font = '600 30px Arial';
-        let y = outer;
-        for (let row = 0; row < 12; row += 1) {
-          let x = outer;
-          for (let column = 0; column < 12; column += 1) {
-            const cell = row * 12 + column;
-            const value = flatValues[cell];
-            if (!isBlackCell(cell)) {
-              context.fillStyle = '#fff';
-              context.fillRect(x, y, cellSize, cellSize);
-            }
-            if (value) {
-              context.fillStyle = '#000';
-              context.fillText(value, x + cellSize / 2, y + cellSize / 2);
-            }
-            x += cellSize + (column % 3 === 2 && column < 11 ? thick : thin);
-          }
-          y += cellSize + (row % 3 === 2 && row < 11 ? thick : thin);
-        }
-        const image = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
-        if (!image) throw new Error('image');
-        await navigator.clipboard.write([new ClipboardItem({ 'image/png': image })]);
-      }
-    </script>
+    <script src="./app.js"></script>
   </body>
 </html>
+
