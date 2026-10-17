@@ -483,7 +483,10 @@ const findWWing = (candidates) => {
                 const other = Array.from(firstDigits).find((digit) => digit !== strongDigit);
                 for (const unit of UNITS) {
                     const link = unit.filter((cell) => candidates.get(cell)?.has(strongDigit));
-                    if (link.length !== 2)
+                    // A W-Wing's conjugate pair is a separate strong link.  An endpoint
+                    // cannot double as one of that link's cells: doing so incorrectly
+                    // turns an ordinary bivalue relationship into a W-Wing.
+                    if (link.length !== 2 || link.includes(first) || link.includes(second))
                         continue;
                     const connects = (sees(link[0], first) && sees(link[1], second)) || (sees(link[1], first) && sees(link[0], second));
                     if (!connects)

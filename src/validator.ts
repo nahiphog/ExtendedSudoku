@@ -3,6 +3,8 @@ const { ACTIVE_CELLS, isBlackCell, positionOf, parsePuzzle, applyPlacement, buil
 
 const input = document.querySelector<HTMLTextAreaElement>('#puzzle-input')!;
 const button = document.querySelector<HTMLButtonElement>('#check-puzzle')!;
+const pasteButton = document.querySelector<HTMLButtonElement>('#paste-clipboard')!;
+const clearButton = document.querySelector<HTMLButtonElement>('#clear-input')!;
 const validatorStatus = document.querySelector<HTMLOutputElement>('#validator-status')!;
 const solutions = document.querySelector<HTMLDivElement>('#solutions')!;
 
@@ -141,6 +143,30 @@ const createSolutionCard = (heading: string, values: GridValues, givens: GridVal
   if (other) ACTIVE_CELLS.forEach((cell) => { if (values[cell] !== other[cell]) board.querySelectorAll('.cell')[cell].classList.add('differs'); });
   card.append(board); return card;
 };
+
+const clearInput = (): void => {
+  input.value = '';
+  solutions.replaceChildren();
+  validatorStatus.textContent = '';
+  input.focus();
+};
+
+pasteButton.addEventListener('click', async () => {
+  if (!navigator.clipboard?.readText) {
+    validatorStatus.textContent = 'Clipboard access is not available in this browser.';
+    return;
+  }
+  try {
+    input.value = await navigator.clipboard.readText();
+    solutions.replaceChildren();
+    validatorStatus.textContent = 'Pasted clipboard contents.';
+    input.focus();
+  } catch {
+    validatorStatus.textContent = 'Unable to read the clipboard. Please allow clipboard access and try again.';
+  }
+});
+
+clearButton.addEventListener('click', clearInput);
 
 button.addEventListener('click', () => {
   solutions.replaceChildren();

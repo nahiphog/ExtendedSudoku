@@ -3,6 +3,8 @@
 const { ACTIVE_CELLS, isBlackCell, positionOf, parsePuzzle, applyPlacement, buildCandidates, removeCandidate, findSolutions, solveWithTechniques } = window.ExtendedSudokuCore;
 const input = document.querySelector('#puzzle-input');
 const button = document.querySelector('#check-puzzle');
+const pasteButton = document.querySelector('#paste-clipboard');
+const clearButton = document.querySelector('#clear-input');
 const validatorStatus = document.querySelector('#validator-status');
 const solutions = document.querySelector('#solutions');
 const techniqueWeights = {
@@ -177,6 +179,28 @@ const createSolutionCard = (heading, values, givens, other) => {
     card.append(board);
     return card;
 };
+const clearInput = () => {
+    input.value = '';
+    solutions.replaceChildren();
+    validatorStatus.textContent = '';
+    input.focus();
+};
+pasteButton.addEventListener('click', async () => {
+    if (!navigator.clipboard?.readText) {
+        validatorStatus.textContent = 'Clipboard access is not available in this browser.';
+        return;
+    }
+    try {
+        input.value = await navigator.clipboard.readText();
+        solutions.replaceChildren();
+        validatorStatus.textContent = 'Pasted clipboard contents.';
+        input.focus();
+    }
+    catch {
+        validatorStatus.textContent = 'Unable to read the clipboard. Please allow clipboard access and try again.';
+    }
+});
+clearButton.addEventListener('click', clearInput);
 button.addEventListener('click', () => {
     solutions.replaceChildren();
     const parsed = parsePuzzle(input.value);

@@ -80,6 +80,10 @@ assertEliminates(findXYZWing(candidateMap([
 assertEliminates(findWWing(candidateMap([
   [cellAt(0, 0), [1, 2]], [cellAt(3, 3), [1, 2]], [cellAt(0, 5), [1]], [cellAt(3, 5), [1]], [cellAt(0, 3), [2]],
 ])), 'W-Wing', cellAt(0, 3), 2);
+assert(findWWing(candidateMap([
+  [cellAt(0, 3), [3, 6]], [cellAt(2, 0), [3, 6]], [cellAt(0, 2), [1, 6]],
+  [cellAt(2, 3), [3]], [cellAt(2, 5), [3]],
+])) === null, 'a W-Wing conjugate pair must not reuse a W-Wing endpoint');
 assertEliminates(findEmptyRectangle(candidateMap([
   [cellAt(0, 1), [1]], [cellAt(1, 0), [1]], [cellAt(0, 5), [1]], [cellAt(4, 5), [1]], [cellAt(4, 0), [1]],
 ])), 'Empty Rectangle', cellAt(4, 0), 1);
@@ -98,6 +102,13 @@ assert(emptyRectangleStep >= 0, 'the advanced-technique fixture should exercise 
 const nextMove = fallbackFixture.moves[emptyRectangleStep + 1];
 assert(nextMove.technique === 'Naked Single' && nextMove.cell === cellAt(9, 7) && nextMove.digit === 2,
   'the Empty Rectangle must yield R10C8 = 2 as the following Naked Single');
+
+// Regression for the false W-Wing where one endpoint was also treated as a
+// conjugate-pair cell.  The walkthrough must now complete safely.
+const wWingRegression = '8....2......9..5.7.......54.9...2...5..4.6....8..6............792.....1..8.....257............3..9....8.4..1...1...7.52.......2.3..9......9....3';
+const wWingRegressionResult = solveWithTechniques(parsePuzzle(wWingRegression).values, true);
+assert(wWingRegressionResult.solution !== null, 'W-Wing regression puzzle should solve');
+assert(wWingRegressionResult.walkthroughValid, 'W-Wing regression walkthrough must complete without an invalid deduction');
 
 const blackCellInput = `${fixture.slice(0, 9)}1${fixture.slice(10)}`;
 assert(parsePuzzle(blackCellInput).errors.length > 0, 'a digit in a black cell must be rejected');
