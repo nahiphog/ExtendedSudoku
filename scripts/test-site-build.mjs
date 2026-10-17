@@ -11,6 +11,7 @@ const pages = [
   ['dist/index.html', 'app.js'],
   ['dist/validator.html', 'validator.js'],
   ['dist/simulation.html', 'simulation.js'],
+  ['dist/simulation-difficulty.html', 'simulation-difficulty.js'],
 ];
 
 for (const [pagePath, scriptName] of pages) {
@@ -22,6 +23,15 @@ for (const [pagePath, scriptName] of pages) {
   assert(existsSync(scriptPath), `${scriptName} must be emitted by TypeScript`);
   const script = read(`dist/${scriptName}`);
   assert(!/^import /m.test(script), `${scriptName} must be runnable from file:// without imports`);
+}
+
+const difficultyPage = read('dist/simulation-difficulty.html');
+assert(difficultyPage.includes('Display grids with difficulty ratings at least'), 'difficulty simulation must expose its rating threshold');
+for (const rating of ['300', '400', '500', '600', '700', '800', '1000', '1500']) {
+  assert(difficultyPage.includes(`<option>${rating}</option>`), `difficulty simulation must offer ${rating}`);
+}
+for (const pagePath of ['dist/index.html', 'dist/techniques.html', 'dist/validator.html', 'dist/simulation.html', 'dist/simulation-difficulty.html']) {
+  assert(read(pagePath).includes('simulation-difficulty.html'), `${pagePath} must link to Simulation difficulty`);
 }
 
 assert(existsSync(resolve(root, 'dist/core/extended-sudoku-core.js')), 'the shared browser solver bundle must be emitted');

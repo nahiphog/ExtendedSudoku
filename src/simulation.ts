@@ -60,8 +60,11 @@ run.onclick = () => {
   const qualifying = [];
   const tick = () => {
     if (halted || done >= total) {
-      simStatus.textContent = `${done}/${total} trials · average ${(elapsed / Math.max(1, done)).toFixed(1)} ms · ${qualifying.length} qualifying result(s) · shared single-cell digging`;
-      show(qualifying, latest, clueLimit);
+      const state = halted ? 'halted' : 'complete';
+      simStatus.textContent = `${done}/${total} trials · average ${(elapsed / Math.max(1, done)).toFixed(1)} ms · ${qualifying.length} qualifying result(s) · ${state} · shared single-cell digging`;
+      // A halted simulation should preserve only results that already met the
+      // chosen criterion; a partially completed trial is not a result.
+      show(qualifying, halted ? null : latest, clueLimit);
       return;
     }
     const startedAt = performance.now();
@@ -73,7 +76,7 @@ run.onclick = () => {
     simStatus.textContent = `${done}/${total} trials · average ${(elapsed / done).toFixed(1)} ms · ${qualifying.length} qualifying result(s) · shared single-cell digging`;
     if (qualifying.length > qualifyingCountBefore) show(qualifying, latest, clueLimit);
     if (done < total && !halted) setTimeout(tick, 0);
-    else show(qualifying, latest, clueLimit);
+    else show(qualifying, halted ? null : latest, clueLimit);
   };
   tick();
 };
