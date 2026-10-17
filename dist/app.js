@@ -1,5 +1,6 @@
-"use strict";
 // @ts-nocheck
+import { applyPlacement, buildCandidates, removeCandidate } from './core/candidates.js';
+import { solveWithTechniques } from './core/solver.js';
 const greyAreas = [[1, 10], [4, 7], [7, 4], [10, 1]];
 const grid = document.querySelector('#grid');
 const well = document.querySelector('#well');
@@ -150,10 +151,11 @@ generator.addEventListener('click', () => {
         const cell = (entry.row - 1) * 12 + entry.column - 1;
         entry.cell.classList.toggle('completed-solution', !puzzle[cell]);
     });
-    solveTrace = buildSolveTrace(puzzle, complete) ?? [];
+    const solvedWalkthrough = solveWithTechniques(puzzle, true);
+    solveTrace = solvedWalkthrough.moves;
     renderFinalGrid(0);
     const elapsed = ((performance.now() - startedAt) / 1000).toFixed(2);
-    const difficultyPoints = { 'Naked Single': 4, 'Hidden Single': 6 };
+    const difficultyPoints = { 'Naked Single': 4, 'Hidden Single': 6, 'Locked Candidates': 8, 'Naked Pair': 10, 'Hidden Pair': 12, 'Naked Quad': 18, 'Hidden Quad': 20, 'Brute force': 30 };
     const difficultyRating = solveTrace.reduce((total, step) => total + (difficultyPoints[step.technique] ?? 0), 0);
     summary.textContent = `Difficulty rating: ${difficultyRating} · Unique minimal puzzle · ${108 - removed} clues · ${elapsed}s`;
     renderTechniqueTable(solveTrace);
@@ -169,166 +171,26 @@ completedToggle.addEventListener('click', () => {
     completedToggle.textContent = isHidden ? 'Show' : 'Hide';
     completedToggle.setAttribute('aria-expanded', String(!isHidden));
 });
-function candidatesFor(values, cell) {
-    const row = Math.floor(cell / 12);
-    const column = cell % 12;
-    const boxRow = Math.floor(row / 3) * 3;
-    const boxColumn = Math.floor(column / 3) * 3;
-    const used = new Set();
-    for (let index = 0; index < 12; index += 1) {
-        used.add(values[row * 12 + index]);
-        used.add(values[index * 12 + column]);
-    }
-    for (let boxRowOffset = 0; boxRowOffset < 3; boxRowOffset += 1) {
-        for (let boxColumnOffset = 0; boxColumnOffset < 3; boxColumnOffset += 1) {
-            used.add(values[(boxRow + boxRowOffset) * 12 + boxColumn + boxColumnOffset]);
-        }
-    }
-    return Array.from({ length: 9 }, (_, index) => index + 1).filter(digit => !used.has(digit));
-}
-function combinations(items, size) {
-    const result = [];
-    const visit = (start, picked) => {
-        if (picked.length === size) {
-            result.push(picked);
-            return;
-        }
-        for (let index = start; index <= items.length - (size - picked.length); index += 1)
-            visit(index + 1, [...picked, items[index]]);
-    };
-    visit(0, []);
-    return result;
-}
-function findSubsetEliminations(candidateMap, hidden) {
-    for (const size of [2, 4]) {
-        for (const unit of layout.units) {
-            const open = unit.filter(cell => candidateMap.has(cell));
-            if (hidden) {
-                for (const digits of combinations([1, 2, 3, 4, 5, 6, 7, 8, 9], size)) {
-                    const cells = [...new Set(digits.flatMap(digit => open.filter(cell => candidateMap.get(cell).includes(digit))))];
-                    if (cells.length !== size)
-                        continue;
-                    const eliminations = cells.flatMap(cell => candidateMap.get(cell).filter(digit => !digits.includes(digit)).map(digit => ({ cell, digit })));
-                    if (eliminations.length)
-                        return { technique: `Hidden ${size === 2 ? 'Pair' : 'Quad'}`, eliminations };
-                }
-            }
-            else {
-                const eligible = open.filter(cell => candidateMap.get(cell).length >= 2 && candidateMap.get(cell).length <= size);
-                for (const cells of combinations(eligible, size)) {
-                    const digits = [...new Set(cells.flatMap(cell => candidateMap.get(cell)))];
-                    if (digits.length !== size)
-                        continue;
-                    const eliminations = open.filter(cell => !cells.includes(cell)).flatMap(cell => candidateMap.get(cell).filter(digit => digits.includes(digit)).map(digit => ({ cell, digit })));
-                    if (eliminations.length)
-                        return { technique: `Naked ${size === 2 ? 'Pair' : 'Quad'}`, eliminations };
-                }
-            }
-        }
-    }
-    return null;
-}
-function findLockedCandidateEliminations(candidateMap) {
-    const activeBoxes = Array.from({ length: 16 }, (_, index) => index + 1)
-        .map(box => playableCells.filter(entry => entry.box === box).map(entry => (entry.row - 1) * 12 + entry.column - 1))
-        .filter(cells => cells.length);
-    for (const box of activeBoxes) {
-        for (let digit = 1; digit <= 9; digit += 1) {
-            const sources = box.filter(cell => candidateMap.get(cell)?.includes(digit));
-            if (sources.length < 2)
-                continue;
-            const rows = [...new Set(sources.map(cell => Math.floor(cell / 12)))];
-            const columns = [...new Set(sources.map(cell => cell % 12))];
-            const targets = rows.length === 1
-                ? Array.from(candidateMap.keys()).filter(cell => Math.floor(cell / 12) === rows[0] && !box.includes(cell) && candidateMap.get(cell).includes(digit))
-                : columns.length === 1
-                    ? Array.from(candidateMap.keys()).filter(cell => cell % 12 === columns[0] && !box.includes(cell) && candidateMap.get(cell).includes(digit))
-                    : [];
-            if (targets.length)
-                return { technique: 'Locked Candidates', eliminations: targets.map(cell => ({ cell, digit })) };
-        }
-    }
-    return null;
-}
-function buildSolveTrace(puzzle, complete) {
-    const working = [...puzzle];
-    const trace = [];
-    const bannedCandidates = new Map();
-    while (true) {
-        const candidateMap = new Map();
-        for (const entry of playableCells) {
-            const cell = (entry.row - 1) * 12 + entry.column - 1;
-            if (working[cell])
-                continue;
-            const candidates = candidatesFor(working, cell).filter(digit => !bannedCandidates.get(cell)?.has(digit));
-            candidateMap.set(cell, candidates);
-        }
-        if (!candidateMap.size)
-            return trace;
-        const nakedSingle = Array.from(candidateMap, ([cell, candidates]) => ({ cell, candidates })).find(({ candidates }) => candidates.length === 1);
-        if (nakedSingle) {
-            const digit = nakedSingle.candidates[0];
-            if (digit !== complete[nakedSingle.cell])
-                return trace;
-            trace.push({ cell: nakedSingle.cell, digit, technique: 'Naked Single' });
-            working[nakedSingle.cell] = digit;
-            continue;
-        }
-        let hiddenSingle = null;
-        for (const unit of layout.units) {
-            for (let digit = 1; digit <= 9; digit += 1) {
-                const candidates = unit.filter(cell => candidateMap.get(cell)?.includes(digit));
-                if (candidates.length === 1) {
-                    hiddenSingle = { cell: candidates[0], digit };
-                    break;
-                }
-            }
-            if (hiddenSingle)
-                break;
-        }
-        if (hiddenSingle) {
-            if (hiddenSingle.digit !== complete[hiddenSingle.cell])
-                return trace;
-            trace.push({ cell: hiddenSingle.cell, digit: hiddenSingle.digit, technique: 'Hidden Single' });
-            working[hiddenSingle.cell] = hiddenSingle.digit;
-            continue;
-        }
-        const advanced = findLockedCandidateEliminations(candidateMap)
-            || findSubsetEliminations(candidateMap, false)
-            || findSubsetEliminations(candidateMap, true);
-        if (advanced) {
-            advanced.eliminations.forEach(({ cell, digit }) => {
-                if (!bannedCandidates.has(cell))
-                    bannedCandidates.set(cell, new Set());
-                bannedCandidates.get(cell).add(digit);
-            });
-            continue;
-        }
-        return trace;
-    }
-}
 function renderFinalGrid(step) {
     if (!finalPuzzle)
         return;
-    const displayed = replayValues(step);
-    const previous = step ? replayValues(step - 1) : null;
-    const filledCells = new Set(solveTrace.slice(0, step).map(({ cell }) => cell));
-    const notes = snyderNotesFor(displayed);
-    const eliminated = previous ? eliminatedSnyderNotes(snyderNotesFor(previous), notes, displayed) : new Map();
+    const replay = solverReplay(step);
+    const { displayed, notes, eliminated, activeMove } = replay;
+    const highlighted = new Set(activeMove?.sourceCells ?? []);
     finalGrid.replaceChildren();
     for (let cell = 0; cell < 144; cell += 1) {
         const row = Math.floor(cell / 12) + 1;
         const column = cell % 12 + 1;
         const tile = document.createElement('div');
-        tile.className = `cell${isBlackCell(cell) ? ' grey' : ''}${column % 3 === 0 ? ' v-divider' : ''}${row % 3 === 0 ? ' h-divider' : ''}${step && solveTrace[step - 1].cell === cell ? ' step-highlight' : ''}`;
+        tile.className = `cell${isBlackCell(cell) ? ' grey' : ''}${column % 3 === 0 ? ' v-divider' : ''}${row % 3 === 0 ? ' h-divider' : ''}${highlighted.has(cell) ? ' step-highlight' : ''}`;
         tile.setAttribute('role', 'gridcell');
         if (!isBlackCell(cell) && displayed[cell]) {
             const number = document.createElement('span');
-            number.className = `placed-number${filledCells.has(cell) ? ' solution-number' : ''}`;
+            number.className = `placed-number${!finalPuzzle[cell] ? ' solution-number' : ''}`;
             number.textContent = displayed[cell];
             tile.append(number);
         }
-        else if (!isBlackCell(cell)) {
+        else if (!isBlackCell(cell) && step > 0) {
             const candidateNotes = document.createElement('span');
             candidateNotes.className = 'candidate-notes';
             for (let digit = 1; digit <= 9; digit += 1) {
@@ -344,41 +206,39 @@ function renderFinalGrid(step) {
         finalGrid.append(tile);
     }
 }
-function replayValues(step) {
+function applySolverMove(displayed, notes, move) {
+    if (move.cell !== undefined && move.digit !== undefined)
+        applyPlacement(displayed, notes, move.cell, move.digit);
+    move.eliminations?.forEach(({ cell, digit }) => removeCandidate(notes, cell, digit));
+}
+function solverReplay(step) {
     const displayed = [...finalPuzzle];
-    solveTrace.slice(0, step).forEach(({ cell, digit }) => { displayed[cell] = digit; });
-    return displayed;
-}
-function snyderNotesFor(currentValues) {
-    const notes = new Map();
-    playableCells.forEach(({ row, column }) => {
-        const cell = (row - 1) * 12 + column - 1;
-        if (!currentValues[cell])
-            notes.set(cell, new Set(candidatesFor(currentValues, cell)));
-    });
-    return notes;
-}
-function eliminatedSnyderNotes(previousNotes, currentNotes, displayed) {
+    const notes = buildCandidates(displayed);
     const eliminated = new Map();
-    previousNotes.forEach((digits, cell) => {
-        if (displayed[cell])
-            return;
-        digits.forEach(digit => {
-            if (!currentNotes.get(cell)?.has(digit)) {
+    let activeMove = null;
+    if (step >= 2) {
+        for (let index = 0; index < step - 2; index += 1)
+            applySolverMove(displayed, notes, solveTrace[index]);
+        activeMove = solveTrace[step - 2];
+        if (activeMove.cell !== undefined) {
+            applySolverMove(displayed, notes, activeMove);
+        }
+        else {
+            activeMove.eliminations?.forEach(({ cell, digit }) => {
                 if (!eliminated.has(cell))
                     eliminated.set(cell, new Set());
                 eliminated.get(cell).add(digit);
-            }
-        });
-    });
-    return eliminated;
+            });
+        }
+    }
+    return { displayed, notes, eliminated, activeMove };
 }
 function renderTechniqueTable(trace) {
-    const order = ['Naked Single', 'Hidden Single'];
+    const order = [...new Set(trace.map(step => step.technique))];
     techniqueTable.replaceChildren();
     order.forEach(technique => {
         const steps = trace
-            .map((step, index) => ({ ...step, number: index + 1 }))
+            .map((step, index) => ({ ...step, number: index + 2 }))
             .filter(step => step.technique === technique);
         if (!steps.length)
             return;
@@ -398,17 +258,15 @@ function updateSolveLabel(step) {
         return;
     }
     if (step === 0) {
-        solveStepLabel.textContent = `0 / ${solveTrace.length}: starting puzzle. Candidate (Snyder) marks appear in every empty, non-shaded cell.`;
+        solveStepLabel.textContent = 'Original puzzle — no Snyder notation.';
         return;
     }
-    const current = solveTrace[step - 1];
-    const row = Math.floor(current.cell / 12) + 1;
-    const column = current.cell % 12 + 1;
-    const box = Math.floor((row - 1) / 3) * 4 + Math.floor((column - 1) / 3) + 1;
-    const displayed = replayValues(step);
-    const eliminated = eliminatedSnyderNotes(snyderNotesFor(replayValues(step - 1)), snyderNotesFor(displayed), displayed);
-    const eliminatedCount = Array.from(eliminated.values()).reduce((total, digits) => total + digits.size, 0);
-    solveStepLabel.textContent = `${step} / ${solveTrace.length}: Row ${row}, column ${column}, Box ${box} is highlighted — place ${current.digit} using ${current.technique}. ${eliminatedCount} Snyder mark${eliminatedCount === 1 ? '' : 's'} ${eliminatedCount === 1 ? 'is' : 'are'} red and will be removed at the next step.`;
+    if (step === 1) {
+        solveStepLabel.textContent = 'Snyder notation has been added to every non-given, non-shaded cell.';
+        return;
+    }
+    const current = solveTrace[step - 2];
+    solveStepLabel.textContent = `${step} / ${solveTrace.length + 1}: ${current.explanation ?? current.technique}`;
 }
 function populateStepMenu() {
     stepSelect.replaceChildren();
@@ -422,17 +280,21 @@ function populateStepMenu() {
 function setReplayStep(requestedStep) {
     const step = Math.max(0, Math.min(solveTrace.length + 1, requestedStep));
     stepSelect.value = String(step);
-    renderFinalGrid(Math.max(0, step - 1));
+    renderFinalGrid(step);
     updateSolveLabel(step);
     stepStartButton.disabled = step === 0;
     stepPreviousButton.disabled = step === 0;
     stepNextButton.disabled = step === solveTrace.length + 1;
     stepLastButton.disabled = step === solveTrace.length + 1;
-    if (step === 0) {
+    if (step < 2) {
         walkthroughBoard.classList.remove('has-active-step');
     }
     else {
-        const cell = solveTrace[step - 1].cell;
+        const cell = solveTrace[step - 2].sourceCells?.[0];
+        if (cell === undefined) {
+            walkthroughBoard.classList.remove('has-active-step');
+            return;
+        }
         const row = Math.floor(cell / 12);
         const column = cell % 12;
         topArrow.style.left = `${((column + 0.5) / 12) * 100}%`;

@@ -1,4 +1,9 @@
 {
+  "type": "module",
+  "scripts": {
+    "build": "tsc --project tsconfig.json",
+    "test": "npm run build && node scripts/test-solver.mjs && node scripts/test-site-build.mjs"
+  },
   "devDependencies": {
     "typescript": "^7.0.2"
   }

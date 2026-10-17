@@ -48,6 +48,13 @@ h2 { margin: 22px 0 10px; font-size: 1rem; }
 .histogram { display:flex; align-items:end; gap:3px; min-height:120px; margin:18px 0; border-bottom:2px solid #000; overflow-x:auto; }
 .bar { min-width:22px; background:#0758c8; color:#fff; font-size:10px; writing-mode:vertical-rl; padding:2px; }
 .validator-solutions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; margin-top: 18px; }
+.validator-card { min-width: 0; padding: 16px; border: 2px solid #000; background: #fff; }
+.validator-card > h2 { margin-top: 0; }
+.validator-card .walkthrough-board { width: 100%; min-width: 460px; }
+.validator-card .final-grid-shell { min-width: 0; }
+.validator-card .final-workspace { grid-template-columns: minmax(0, 740px) minmax(280px, 1fr); }
+.validator-card .final-grid { width: 100%; }
+.validator-card .guide-arrow { pointer-events: none; }
 .validator-grid .differs { background: #ffb347; }
 .techniques-page textarea { width: 100%; margin: 8px 0; font: 14px monospace; }
 @media (max-width: 720px) { .validator-solutions { grid-template-columns: 1fr; } }
