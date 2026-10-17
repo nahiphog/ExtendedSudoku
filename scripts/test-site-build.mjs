@@ -34,7 +34,15 @@ for (const rating of ['300', '400', '500', '600', '700', '800', '1000', '1500'])
   assert(difficultyPage.includes(`<option>${rating}</option>`), `difficulty simulation must offer ${rating}`);
 }
 for (const pagePath of ['dist/index.html', 'dist/techniques.html', 'dist/validator.html', 'dist/simulation.html', 'dist/simulation-difficulty.html']) {
-  assert(read(pagePath).includes('simulation-difficulty.html'), `${pagePath} must link to Simulation difficulty`);
+  const page = read(pagePath);
+  assert(page.includes('simulation-difficulty.html'), `${pagePath} must link to Simulation difficulty`);
+  assert((page.match(/Extended Sudoku Maker/g) ?? []).length === 1, `${pagePath} must show the site title only in its header`);
+}
+for (const pagePath of ['dist/simulation.html', 'dist/simulation-difficulty.html']) {
+  const page = read(pagePath);
+  assert(page.includes('id="simulation-toggle"'), `${pagePath} must provide a single simulation toggle`);
+  assert(!page.includes('id="run"') && !page.includes('id="halt"'), `${pagePath} must not retain separate Run and Halt buttons`);
+  assert((page.match(/class="simulation-option"/g) ?? []).length === 2, `${pagePath} must separate its two options into paragraphs`);
 }
 const techniquesPage = read('dist/techniques.html');
 assert(techniquesPage.includes('<td>Empty Rectangle</td><td>120</td><td>Active</td>'), 'technique ratings must show Empty Rectangle as active with SudokUI difficulty 120');
