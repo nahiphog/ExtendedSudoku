@@ -1,9 +1,10 @@
 // @ts-nocheck
-const { ACTIVE_CELLS, generateCompletedGrid, digSingleCell } = window.ExtendedSudokuCore;
+const { ACTIVE_CELLS, generateCompletedGrid, digSingleCell, digDualCell } = window.ExtendedSudokuCore;
 
 const trials = document.querySelector('#trials');
 const minimum = document.querySelector('#minimum-difficulty');
 const maximum = document.querySelector('#maximum-difficulty');
+const diggingMode = document.querySelector('#digging-mode');
 const toggle = document.querySelector('#simulation-toggle');
 const simStatus = document.querySelector('#sim-status');
 const selected = document.querySelector('#selected');
@@ -27,9 +28,10 @@ let activeWorker = null;
 let settleActiveWorker = null;
 let runId = 0;
 const ratingTimeoutMs = 2000;
+const diggingLabel = () => diggingMode.value === 'dual' ? 'dual-cell' : 'single-cell';
 const setRunning = (value) => {
   running = value;
-  toggle.textContent = value ? 'Halt simulation' : 'Run single-cell simulation';
+  toggle.textContent = value ? 'Halt simulation' : `Run ${diggingLabel()} simulation`;
   toggle.setAttribute('aria-pressed', String(value));
 };
 const stringify = (values) => values.map((value) => value || '.').join('');
@@ -118,6 +120,8 @@ const startSimulation = () => {
   const total = Number(trials.value);
   const minimumRating = Number(minimum.value);
   const maximumRating = Number(maximum.value);
+  const dig = diggingMode.value === 'dual' ? digDualCell : digSingleCell;
+  const activeDiggingLabel = diggingLabel();
   if (minimumRating > maximumRating) {
     setRunning(false);
     simStatus.textContent = 'Choose an upper limit that is at least the lower difficulty limit.';
@@ -131,12 +135,12 @@ const startSimulation = () => {
     if (thisRun !== runId) return;
     if (halted || done >= total) {
       const state = halted ? 'halted' : 'complete';
-      simStatus.textContent = `${done}/${total} trials · average ${(elapsed / Math.max(1, done)).toFixed(1)} ms · ${qualifying.length} qualifying result(s) · ${unknown.length} unknown rating(s) · ${state} · shared single-cell digging`;
+      simStatus.textContent = `${done}/${total} trials · average ${(elapsed / Math.max(1, done)).toFixed(1)} ms · ${qualifying.length} qualifying result(s) · ${unknown.length} unknown rating(s) · ${state} · shared ${activeDiggingLabel} digging`;
       setRunning(false);
       return;
     }
     const startedAt = performance.now();
-    const puzzle = digSingleCell(generateCompletedGrid());
+    const puzzle = dig(generateCompletedGrid());
     const result = await calculateDifficulty(puzzle);
     if (thisRun !== runId || halted || result.cancelled) return;
     elapsed += performance.now() - startedAt;
@@ -144,13 +148,15 @@ const startSimulation = () => {
     const before = qualifying.length;
     if (result.unknown) unknown.push({ puzzle });
     else if (result.rating >= minimumRating && result.rating <= maximumRating && qualifying.length < 2) qualifying.push({ puzzle, rating: result.rating });
-    simStatus.textContent = `${done}/${total} trials · average ${(elapsed / done).toFixed(1)} ms · ${qualifying.length} qualifying result(s) · ${unknown.length} unknown rating(s) · shared single-cell digging`;
+    simStatus.textContent = `${done}/${total} trials · average ${(elapsed / done).toFixed(1)} ms · ${qualifying.length} qualifying result(s) · ${unknown.length} unknown rating(s) · shared ${activeDiggingLabel} digging`;
     if (qualifying.length > before || result.unknown) show(qualifying, unknown, true);
     if (done < total && !halted) setTimeout(tick, 0);
     else if (halted) tick();
   };
   tick();
 };
+
+diggingMode.onchange = () => { if (!running) setRunning(false); };
 
 toggle.onclick = () => {
   if (!running) {

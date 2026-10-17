@@ -16,6 +16,7 @@ const pages = [
 
 for (const [pagePath, scriptName] of pages) {
   const page = read(pagePath);
+  assert(page.includes('rel="icon" href="./favicon.svg"'), `${pagePath} must load the shared browser-tab icon`);
   assert(page.includes('src="./core/extended-sudoku-core.js"'), `${pagePath} must load the local-file-safe solver bundle`);
   assert(page.includes(`src="./${scriptName}"`), `${pagePath} must load ${scriptName}`);
   assert(!page.includes(`type="module" src="./${scriptName}"`), `${pagePath} must not require file:// module imports`);
@@ -25,12 +26,18 @@ for (const [pagePath, scriptName] of pages) {
   assert(!/^import /m.test(script), `${scriptName} must be runnable from file:// without imports`);
 }
 
+assert(existsSync(resolve(root, 'dist/favicon.svg')), 'the shared browser-tab icon must be present');
+for (const pagePath of ['dist/index.html', 'dist/techniques.html', 'dist/validator.html', 'dist/simulation.html', 'dist/simulation-difficulty.html']) {
+  assert(read(pagePath).includes('rel="icon" href="./favicon.svg"'), `${pagePath} must load the shared browser-tab icon`);
+}
+
 assert(existsSync(resolve(root, 'dist/simulation-difficulty-worker.js')), 'difficulty simulation must emit its isolated rating worker');
 assert(read('dist/simulation-difficulty.js').includes('simulation-difficulty-worker.js'), 'difficulty simulation must use the rating worker');
 
 const difficultyPage = read('dist/simulation-difficulty.html');
 assert(difficultyPage.includes('Display grids with difficulty ratings at least'), 'difficulty simulation must expose its rating threshold');
 assert(difficultyPage.includes('Display grids with difficulty ratings at most'), 'difficulty simulation must expose its upper rating threshold');
+assert(difficultyPage.includes('id="digging-mode"') && difficultyPage.includes('value="dual"'), 'difficulty simulation must offer both digging modes');
 for (const rating of ['300', '400', '500', '600', '700', '800', '1000', '1500']) {
   assert(difficultyPage.includes(`<option>${rating}</option>`), `difficulty simulation must offer ${rating}`);
 }
@@ -68,7 +75,7 @@ assert(techniquesPage.includes('<td>Jellyfish</td><td>160</td><td>Active</td>'),
 assert(existsSync(resolve(root, 'dist/core/extended-sudoku-core.js')), 'the shared browser solver bundle must be emitted');
 const browserContext = { window: {} };
 vm.runInNewContext(read('dist/core/extended-sudoku-core.js'), browserContext);
-for (const functionName of ['solveWithTechniques', 'buildCandidates', 'findSolutions', 'generateCompletedGrid', 'digSingleCell']) {
+for (const functionName of ['solveWithTechniques', 'buildCandidates', 'findSolutions', 'generateCompletedGrid', 'digSingleCell', 'digDualCell']) {
   assert(typeof browserContext.window.ExtendedSudokuCore?.[functionName] === 'function', `browser bundle must expose ${functionName}`);
 }
 

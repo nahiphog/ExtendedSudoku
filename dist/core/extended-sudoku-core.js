@@ -790,6 +790,31 @@ const digSingleCell = (completed) => {
     }
     return puzzle;
 };
+/** Removes rotationally mirrored clue pairs while retaining a unique solution. */
+const digDualCell = (completed) => {
+    const puzzle = [...completed];
+    const tested = new Set();
+    const pairs = [];
+    for (const cell of shuffle(ACTIVE_CELLS)) {
+        if (tested.has(cell))
+            continue;
+        const mirror = 143 - cell;
+        tested.add(cell);
+        tested.add(mirror);
+        pairs.push([cell, mirror]);
+    }
+    for (const [cell, mirror] of pairs) {
+        const value = puzzle[cell];
+        const mirrorValue = puzzle[mirror];
+        puzzle[cell] = 0;
+        puzzle[mirror] = 0;
+        if (countSolutions(puzzle, 2) !== 1) {
+            puzzle[cell] = value;
+            puzzle[mirror] = mirrorValue;
+        }
+    }
+    return puzzle;
+};
 
-  global.ExtendedSudokuCore = { ACTIVE_CELLS, describeCell, isBlackCell, positionOf, parsePuzzle, applyPlacement, buildCandidates, removeCandidate, findSolutions, solveWithTechniques, generateCompletedGrid, digSingleCell };
+  global.ExtendedSudokuCore = { ACTIVE_CELLS, describeCell, isBlackCell, positionOf, parsePuzzle, applyPlacement, buildCandidates, removeCandidate, findSolutions, solveWithTechniques, generateCompletedGrid, digSingleCell, digDualCell };
 }(typeof window !== 'undefined' ? window : globalThis));

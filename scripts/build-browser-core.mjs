@@ -20,7 +20,7 @@ const api = [
   'ACTIVE_CELLS', 'describeCell', 'isBlackCell', 'positionOf', 'parsePuzzle',
   'applyPlacement', 'buildCandidates', 'removeCandidate',
   'findSolutions', 'solveWithTechniques',
-  'generateCompletedGrid', 'digSingleCell',
+  'generateCompletedGrid', 'digSingleCell', 'digDualCell',
 ];
 
 writeFileSync(resolve(coreDirectory, 'extended-sudoku-core.js'), `/* Generated from TypeScript core modules. */\n(function (global) {\n${body}\n  global.ExtendedSudokuCore = { ${api.join(', ')} };\n}(typeof window !== 'undefined' ? window : globalThis));\n`);

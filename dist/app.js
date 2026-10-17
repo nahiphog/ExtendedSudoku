@@ -1,6 +1,6 @@
 "use strict";
 // @ts-nocheck
-const { applyPlacement, buildCandidates, removeCandidate, solveWithTechniques, generateCompletedGrid, digSingleCell } = window.ExtendedSudokuCore;
+const { applyPlacement, buildCandidates, removeCandidate, solveWithTechniques, generateCompletedGrid, digSingleCell, digDualCell } = window.ExtendedSudokuCore;
 const greyAreas = [[1, 10], [4, 7], [7, 4], [10, 1]];
 const grid = document.querySelector('#grid');
 const well = document.querySelector('#well');
@@ -58,46 +58,14 @@ for (let row = 1; row <= 12; row += 1) {
 }
 generator.addEventListener('click', () => {
     const startedAt = performance.now();
-    const shuffle = input => {
-        const result = [...input];
-        for (let index = result.length - 1; index > 0; index -= 1) {
-            const swapIndex = Math.floor(Math.random() * (index + 1));
-            [result[index], result[swapIndex]] = [result[swapIndex], result[index]];
-        }
-        return result;
-    };
     const complete = generateCompletedGrid();
     playableCells.forEach(entry => {
         const cell = (entry.row - 1) * 12 + entry.column - 1;
         entry.cell.textContent = complete[cell];
         values[entry.row - 1][entry.column - 1] = complete[cell];
     });
-    let puzzle = diggingMode.value === 'single' ? digSingleCell(complete) : [...complete];
-    let removed = diggingMode.value === 'single' ? playableCells.length - puzzle.filter(Boolean).length : 0;
-    const diggingTargets = diggingMode.value === 'dual'
-        ? shuffle(playableCells).filter(entry => {
-            const mirror = playableCells.find(other => other.row === 13 - entry.row && other.column === 13 - entry.column);
-            return mirror && (entry.row < mirror.row || (entry.row === mirror.row && entry.column <= mirror.column));
-        })
-        : [];
-    for (const entry of diggingTargets) {
-        const cell = (entry.row - 1) * 12 + entry.column - 1;
-        const mirrorEntry = diggingMode.value === 'dual'
-            ? playableCells.find(other => other.row === 13 - entry.row && other.column === 13 - entry.column)
-            : null;
-        const mirrorCell = mirrorEntry ? (mirrorEntry.row - 1) * 12 + mirrorEntry.column - 1 : cell;
-        const saved = puzzle[cell];
-        const mirrorSaved = puzzle[mirrorCell];
-        puzzle[cell] = 0;
-        puzzle[mirrorCell] = 0;
-        if (window.ExtendedEngine.countSolutions(puzzle, layout, 2) === 1) {
-            removed += cell === mirrorCell ? 1 : 2;
-        }
-        else {
-            puzzle[cell] = saved;
-            puzzle[mirrorCell] = mirrorSaved;
-        }
-    }
+    const puzzle = diggingMode.value === 'single' ? digSingleCell(complete) : digDualCell(complete);
+    const removed = playableCells.length - puzzle.filter(Boolean).length;
     finalPuzzle = puzzle;
     playableCells.forEach(entry => {
         const cell = (entry.row - 1) * 12 + entry.column - 1;
