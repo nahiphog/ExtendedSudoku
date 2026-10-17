@@ -299,7 +299,7 @@ function buildSolveTrace(puzzle, complete) {
             });
             continue;
         }
-        return null;
+        return trace;
     }
 }
 function renderFinalGrid(step) {
@@ -407,7 +407,7 @@ function updateSolveLabel(step) {
 }
 function populateStepMenu() {
     stepSelect.replaceChildren();
-    for (let step = 0; step <= solveTrace.length; step += 1) {
+    for (let step = 0; step <= solveTrace.length + 1; step += 1) {
         const option = document.createElement('option');
         option.value = String(step);
         option.textContent = `Step ${step}`;
@@ -415,14 +415,14 @@ function populateStepMenu() {
     }
 }
 function setReplayStep(requestedStep) {
-    const step = Math.max(0, Math.min(solveTrace.length, requestedStep));
+    const step = Math.max(0, Math.min(solveTrace.length + 1, requestedStep));
     stepSelect.value = String(step);
-    renderFinalGrid(step);
+    renderFinalGrid(Math.max(0, step - 1));
     updateSolveLabel(step);
     stepStartButton.disabled = step === 0;
     stepPreviousButton.disabled = step === 0;
-    stepNextButton.disabled = step === solveTrace.length;
-    stepLastButton.disabled = step === solveTrace.length;
+    stepNextButton.disabled = step === solveTrace.length + 1;
+    stepLastButton.disabled = step === solveTrace.length + 1;
     if (step === 0) {
         walkthroughBoard.classList.remove('has-active-step');
     }
@@ -439,7 +439,7 @@ stepSelect.addEventListener('change', () => setReplayStep(Number(stepSelect.valu
 stepStartButton.addEventListener('click', () => setReplayStep(0));
 stepPreviousButton.addEventListener('click', () => setReplayStep(Number(stepSelect.value) - 1));
 stepNextButton.addEventListener('click', () => setReplayStep(Number(stepSelect.value) + 1));
-stepLastButton.addEventListener('click', () => setReplayStep(solveTrace.length));
+stepLastButton.addEventListener('click', () => setReplayStep(solveTrace.length + 1));
 async function copyText(text) {
     if (navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(text);

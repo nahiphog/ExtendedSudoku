@@ -2,6 +2,7 @@
 // @ts-nocheck
 const input = document.querySelector('#puzzle-input'), button = document.querySelector('#check-puzzle'), validatorStatus = document.querySelector('#validator-status'), solutions = document.querySelector('#solutions');
 const black = i => { const r = Math.floor(i / 12) + 1, c = i % 12 + 1; return [[1, 10], [4, 7], [7, 4], [10, 1]].some(([a, b]) => r >= a && r < a + 3 && c >= b && c < b + 3); };
+const cells = [...Array(144).keys()].filter(i => !black(i));
 const candidates = (v, i) => { const r = Math.floor(i / 12), c = i % 12, br = Math.floor(r / 3) * 3, bc = Math.floor(c / 3) * 3, u = new Set(); for (let n = 0; n < 12; n++) {
     u.add(v[r * 12 + n]);
     u.add(v[n * 12 + c]);
@@ -33,6 +34,9 @@ function draw(values, other, givens) { const grid = document.createElement('div'
         t.textContent = values[i];
     grid.append(t);
 } return grid; }
+function walkthrough(solution, givens) { const missing = cells.filter(i => !givens[i]), wrap = document.createElement('section'), select = document.createElement('select'), label = document.createElement('p'); wrap.append(document.createElement('h2')); wrap.firstChild.textContent = 'Solution walkthrough'; for (let i = 0; i <= missing.length; i++)
+    select.add(new Option(`Step ${i}`, i)); const render = () => { const state = [...givens]; missing.slice(0, +select.value).forEach(i => state[i] = solution[i]); label.textContent = `Step ${select.value} of ${missing.length}`; const old = wrap.querySelector('.grid'); if (old)
+    old.remove(); wrap.append(draw(state, null, givens)); }; select.onchange = render; wrap.append(select, label); render(); return wrap; }
 button.addEventListener('click', () => { const text = input.value.trim(); solutions.replaceChildren(); if (!/^[1-9.]{144}$/.test(text)) {
     validatorStatus.textContent = 'Enter exactly 144 characters using digits 1–9 and dots.';
     return;
@@ -41,6 +45,6 @@ button.addEventListener('click', () => { const text = input.value.trim(); soluti
     return;
 } if (found.length === 1) {
     validatorStatus.textContent = 'This puzzle has a unique solution.';
-    solutions.append(draw(found[0], null, givens));
+    solutions.append(draw(found[0], null, givens), walkthrough(found[0], givens));
     return;
 } validatorStatus.textContent = 'This puzzle is not unique. Two solutions are shown; differing cells are orange.'; solutions.append(draw(found[0], found[1], givens), draw(found[1], found[0], givens)); });
