@@ -12,6 +12,10 @@ export type Technique =
   | 'Hidden Pair'
   | 'Naked Quad'
   | 'Hidden Quad'
+  | 'Empty Rectangle'
+  | 'XY-Wing'
+  | 'XYZ-Wing'
+  | 'W-Wing'
   | 'Brute force';
 
 export interface CandidateElimination {

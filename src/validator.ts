@@ -8,7 +8,8 @@ const solutions = document.querySelector<HTMLDivElement>('#solutions')!;
 
 const techniqueWeights: Record<Technique, number> = {
   'Snyder Notation': 0, 'Naked Single': 4, 'Hidden Single': 6, 'Locked Candidates': 8,
-  'Naked Pair': 10, 'Hidden Pair': 12, 'Naked Quad': 18, 'Hidden Quad': 20, 'Brute force': 30,
+  'Naked Pair': 10, 'Hidden Pair': 12, 'Naked Quad': 18, 'Hidden Quad': 20,
+  'Empty Rectangle': 24, 'XY-Wing': 26, 'XYZ-Wing': 28, 'W-Wing': 30, 'Brute force': 10000,
 };
 
 const createCell = (cell: number, values: readonly number[], givens: readonly number[], candidates?: CandidateMap,

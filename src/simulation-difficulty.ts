@@ -15,7 +15,8 @@ const weights = {
   'Hidden Pair': 12,
   'Naked Quad': 18,
   'Hidden Quad': 20,
-  'Brute force': 30,
+  'Empty Rectangle': 24, 'XY-Wing': 26, 'XYZ-Wing': 28, 'W-Wing': 30,
+  'Brute force': 10000,
 };
 
 let halted = false;

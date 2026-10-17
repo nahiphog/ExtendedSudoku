@@ -8,6 +8,7 @@ const ALL_DIGITS_MASK = 0x1ff;
 // their own trustworthy Extended Sudoku fixtures are added.
 export const ENABLED_LOGICAL_TECHNIQUES = new Set<Technique>([
   'Naked Single', 'Hidden Single', 'Locked Candidates', 'Naked Pair',
+  'Empty Rectangle', 'XY-Wing', 'XYZ-Wing', 'W-Wing',
 ]);
 const digitMask = (digit: number): number => 1 << (digit - 1);
 const bitCount = (value: number): number => {
@@ -280,11 +281,101 @@ const findHiddenSubset = (candidates: CandidateMap, size: 2 | 4): SolveMove | nu
   return null;
 };
 
+const sees = (left: number, right: number): boolean =>
+  CELL_UNITS[left].some((unit) => CELL_UNITS[right].includes(unit));
+const commonCandidatePeers = (candidates: CandidateMap, sources: readonly number[], digit: Digit): number[] =>
+  Array.from(candidates.keys()).filter((cell) => !sources.includes(cell) && candidates.get(cell)?.has(digit)
+    && sources.every((source) => sees(cell, source)));
+const sameDigits = (left: ReadonlySet<Digit>, right: ReadonlySet<Digit>): boolean =>
+  left.size === right.size && Array.from(left).every((digit) => right.has(digit));
+
+export const findXYWing = (candidates: CandidateMap): SolveMove | null => {
+  for (const [pivot, pivotDigits] of candidates) {
+    if (pivotDigits.size !== 2) continue;
+    const wings = Array.from(candidates.entries()).filter(([cell, digits]) => cell !== pivot && sees(cell, pivot) && digits.size === 2);
+    for (const [first, firstDigits] of wings) for (const [second, secondDigits] of wings) {
+      if (first >= second) continue;
+      const sharedFirst = Array.from(pivotDigits).filter((digit) => firstDigits.has(digit));
+      const sharedSecond = Array.from(pivotDigits).filter((digit) => secondDigits.has(digit));
+      const z = Array.from(firstDigits).find((digit) => secondDigits.has(digit) && !pivotDigits.has(digit));
+      if (sharedFirst.length !== 1 || sharedSecond.length !== 1 || sharedFirst[0] === sharedSecond[0] || !z) continue;
+      const eliminations = commonCandidatePeers(candidates, [first, second], z).map((cell) => ({ cell, digit: z }));
+      if (eliminations.length) return eliminationMove('XY-Wing', eliminations, [pivot, first, second],
+        `An XY-Wing with pivot ${describeCell(pivot)} removes ${z} from cells seeing both wings.`);
+    }
+  }
+  return null;
+};
+
+export const findXYZWing = (candidates: CandidateMap): SolveMove | null => {
+  for (const [pivot, pivotDigits] of candidates) {
+    if (pivotDigits.size !== 3) continue;
+    const wings = Array.from(candidates.entries()).filter(([cell, digits]) => cell !== pivot && sees(cell, pivot) && digits.size === 2);
+    for (const [first, firstDigits] of wings) for (const [second, secondDigits] of wings) {
+      if (first >= second) continue;
+      const shared = Array.from(firstDigits).filter((digit) => secondDigits.has(digit) && pivotDigits.has(digit));
+      const union = new Set([...firstDigits, ...secondDigits]);
+      if (shared.length !== 1 || union.size !== 3 || !sameDigits(union as Set<Digit>, pivotDigits)) continue;
+      const z = shared[0];
+      const eliminations = commonCandidatePeers(candidates, [pivot, first, second], z).map((cell) => ({ cell, digit: z }));
+      if (eliminations.length) return eliminationMove('XYZ-Wing', eliminations, [pivot, first, second],
+        `An XYZ-Wing with pivot ${describeCell(pivot)} removes ${z} from cells seeing all three pattern cells.`);
+    }
+  }
+  return null;
+};
+
+export const findWWing = (candidates: CandidateMap): SolveMove | null => {
+  const bivalue = Array.from(candidates.entries()).filter(([, digits]) => digits.size === 2);
+  for (const [first, firstDigits] of bivalue) for (const [second, secondDigits] of bivalue) {
+    if (first >= second || sees(first, second) || !sameDigits(firstDigits, secondDigits)) continue;
+    for (const strongDigit of firstDigits) {
+      const other = Array.from(firstDigits).find((digit) => digit !== strongDigit)!;
+      for (const unit of UNITS) {
+        const link = unit.filter((cell) => candidates.get(cell)?.has(strongDigit));
+        if (link.length !== 2) continue;
+        const connects = (sees(link[0], first) && sees(link[1], second)) || (sees(link[1], first) && sees(link[0], second));
+        if (!connects) continue;
+        const eliminations = commonCandidatePeers(candidates, [first, second], other).map((cell) => ({ cell, digit: other }));
+        if (eliminations.length) return eliminationMove('W-Wing', eliminations, [first, second, ...link],
+          `A W-Wing linked by ${strongDigit} removes ${other} from cells seeing both wing cells.`);
+      }
+    }
+  }
+  return null;
+};
+
+export const findEmptyRectangle = (candidates: CandidateMap): SolveMove | null => {
+  for (let boxIndex = 24; boxIndex < UNITS.length; boxIndex += 1) for (const digit of DIGITS) {
+    const box = UNITS[boxIndex]; const inBox = box.filter((cell) => candidates.get(cell)?.has(digit));
+    if (inBox.length < 2) continue;
+    const rows = new Set(inBox.map((cell) => Math.floor(cell / 12))); const columns = new Set(inBox.map((cell) => cell % 12));
+    for (const row of rows) for (const column of columns) {
+      if (!inBox.every((cell) => Math.floor(cell / 12) === row || cell % 12 === column)) continue;
+      if (!inBox.some((cell) => Math.floor(cell / 12) === row && cell % 12 !== column) || !inBox.some((cell) => cell % 12 === column && Math.floor(cell / 12) !== row)) continue;
+      for (let otherColumn = 0; otherColumn < 12; otherColumn += 1) {
+        const link = UNITS[12 + otherColumn].filter((cell) => candidates.get(cell)?.has(digit));
+        if (link.length !== 2) continue;
+        const near = link.find((cell) => Math.floor(cell / 12) === row); const far = link.find((cell) => Math.floor(cell / 12) !== row);
+        if (near === undefined || far === undefined || box.includes(near)) continue;
+        const target = Math.floor(far / 12) * 12 + column;
+        if (!box.includes(target) && candidates.get(target)?.has(digit)) return eliminationMove('Empty Rectangle', [{ cell: target, digit }], [...inBox, ...link],
+          `An Empty Rectangle in ${unitLabel(boxIndex)} and a conjugate pair remove ${digit} from ${describeCell(target)}.`);
+      }
+    }
+  }
+  return null;
+};
+
 const nextLogicalMove = (candidates: CandidateMap): SolveMove | null =>
   (ENABLED_LOGICAL_TECHNIQUES.has('Naked Single') ? findNakedSingle(candidates) : null)
   ?? (ENABLED_LOGICAL_TECHNIQUES.has('Hidden Single') ? findHiddenSingle(candidates) : null)
   ?? (ENABLED_LOGICAL_TECHNIQUES.has('Locked Candidates') ? findLockedCandidates(candidates) : null)
   ?? (ENABLED_LOGICAL_TECHNIQUES.has('Naked Pair') ? findNakedSubset(candidates, 2) : null)
+  ?? (ENABLED_LOGICAL_TECHNIQUES.has('Empty Rectangle') ? findEmptyRectangle(candidates) : null)
+  ?? (ENABLED_LOGICAL_TECHNIQUES.has('XY-Wing') ? findXYWing(candidates) : null)
+  ?? (ENABLED_LOGICAL_TECHNIQUES.has('XYZ-Wing') ? findXYZWing(candidates) : null)
+  ?? (ENABLED_LOGICAL_TECHNIQUES.has('W-Wing') ? findWWing(candidates) : null)
   ?? (ENABLED_LOGICAL_TECHNIQUES.has('Hidden Pair') ? findHiddenSubset(candidates, 2) : null)
   ?? (ENABLED_LOGICAL_TECHNIQUES.has('Naked Quad') ? findNakedSubset(candidates, 4) : null)
   ?? (ENABLED_LOGICAL_TECHNIQUES.has('Hidden Quad') ? findHiddenSubset(candidates, 4) : null);

@@ -1,6 +1,6 @@
-import { parsePuzzle } from '../dist/core/grid.js';
+import { cellAt, parsePuzzle } from '../dist/core/grid.js';
 import { applyPlacement, buildCandidates, removeCandidate } from '../dist/core/candidates.js';
-import { ENABLED_LOGICAL_TECHNIQUES, findSolutions, isConsistent, solveWithTechniques } from '../dist/core/solver.js';
+import { ENABLED_LOGICAL_TECHNIQUES, findEmptyRectangle, findSolutions, findWWing, findXYWing, findXYZWing, isConsistent, solveWithTechniques } from '../dist/core/solver.js';
 import { digSingleCell, generateCompletedGrid } from '../dist/core/generator.js';
 
 const assert = (condition, message) => {
@@ -65,6 +65,24 @@ for (const [fixtureIndex, text] of verifyFixtures.entries()) {
     }
   });
 }
+const candidateMap = (entries) => new Map(entries.map(([cell, digits]) => [cell, new Set(digits)]));
+const assertEliminates = (move, technique, cell, digit) => {
+  assert(move?.technique === technique, `${technique} detector should identify its pattern`);
+  assert(move.eliminations?.some((entry) => entry.cell === cell && entry.digit === digit), `${technique} should eliminate the expected candidate`);
+  exercisedTechniques.add(technique);
+};
+assertEliminates(findXYWing(candidateMap([
+  [cellAt(0, 0), [1, 2]], [cellAt(0, 3), [1, 3]], [cellAt(3, 0), [2, 3]], [cellAt(3, 3), [3]],
+])), 'XY-Wing', cellAt(3, 3), 3);
+assertEliminates(findXYZWing(candidateMap([
+  [cellAt(0, 0), [1, 2, 3]], [cellAt(0, 1), [1, 3]], [cellAt(1, 0), [2, 3]], [cellAt(1, 1), [3]],
+])), 'XYZ-Wing', cellAt(1, 1), 3);
+assertEliminates(findWWing(candidateMap([
+  [cellAt(0, 0), [1, 2]], [cellAt(3, 3), [1, 2]], [cellAt(0, 5), [1]], [cellAt(3, 5), [1]], [cellAt(0, 3), [2]],
+])), 'W-Wing', cellAt(0, 3), 2);
+assertEliminates(findEmptyRectangle(candidateMap([
+  [cellAt(0, 1), [1]], [cellAt(1, 0), [1]], [cellAt(0, 5), [1]], [cellAt(4, 5), [1]], [cellAt(4, 0), [1]],
+])), 'Empty Rectangle', cellAt(4, 0), 1);
 for (const technique of ENABLED_LOGICAL_TECHNIQUES) {
   assert(exercisedTechniques.has(technique), `${technique} must have direct unique-puzzle regression coverage before being enabled`);
 }
@@ -73,10 +91,13 @@ for (const technique of ['Hidden Pair', 'Naked Quad', 'Hidden Quad']) {
 }
 
 const fallbackFixture = solveWithTechniques(parsePuzzle(verifyFixtures[1]).values, true);
-const firstBruteForce = fallbackFixture.moves.findIndex((move) => move.technique === 'Brute force');
-assert(firstBruteForce >= 0, 'the fallback fixture should require at least one brute-force placement');
-assert(fallbackFixture.moves.slice(firstBruteForce + 1).some((move) => move.technique !== 'Brute force'),
-  'the solver must resume logical techniques after its first brute-force placement');
+assert(!fallbackFixture.moves.some((move) => move.technique === 'Brute force'),
+  'the advanced-technique fixture should now solve without brute force');
+const emptyRectangleStep = fallbackFixture.moves.findIndex((move) => move.technique === 'Empty Rectangle');
+assert(emptyRectangleStep >= 0, 'the advanced-technique fixture should exercise Empty Rectangle');
+const nextMove = fallbackFixture.moves[emptyRectangleStep + 1];
+assert(nextMove.technique === 'Naked Single' && nextMove.cell === cellAt(9, 7) && nextMove.digit === 2,
+  'the Empty Rectangle must yield R10C8 = 2 as the following Naked Single');
 
 const blackCellInput = `${fixture.slice(0, 9)}1${fixture.slice(10)}`;
 assert(parsePuzzle(blackCellInput).errors.length > 0, 'a digit in a black cell must be rejected');

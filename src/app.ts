@@ -107,7 +107,7 @@ const greyAreas = [[1, 10], [4, 7], [7, 4], [10, 1]];
         solveTrace = solvedWalkthrough.moves;
         renderFinalGrid(0);
         const elapsed = ((performance.now() - startedAt) / 1000).toFixed(2);
-        const difficultyPoints = { 'Naked Single': 4, 'Hidden Single': 6, 'Locked Candidates': 8, 'Naked Pair': 10, 'Hidden Pair': 12, 'Naked Quad': 18, 'Hidden Quad': 20, 'Brute force': 30 };
+        const difficultyPoints = { 'Naked Single': 4, 'Hidden Single': 6, 'Locked Candidates': 8, 'Naked Pair': 10, 'Hidden Pair': 12, 'Naked Quad': 18, 'Hidden Quad': 20, 'Empty Rectangle': 24, 'XY-Wing': 26, 'XYZ-Wing': 28, 'W-Wing': 30, 'Brute force': 10000 };
         const difficultyRating = solveTrace.reduce((total, step) => total + (difficultyPoints[step.technique] ?? 0), 0);
         summary.textContent = `Difficulty rating: ${difficultyRating} · Unique minimal puzzle · ${108 - removed} clues · ${elapsed}s`;
         renderTechniqueTable(solveTrace);
