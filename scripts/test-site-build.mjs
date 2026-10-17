@@ -30,8 +30,12 @@ assert(read('dist/simulation-difficulty.js').includes('simulation-difficulty-wor
 
 const difficultyPage = read('dist/simulation-difficulty.html');
 assert(difficultyPage.includes('Display grids with difficulty ratings at least'), 'difficulty simulation must expose its rating threshold');
+assert(difficultyPage.includes('Display grids with difficulty ratings at most'), 'difficulty simulation must expose its upper rating threshold');
 for (const rating of ['300', '400', '500', '600', '700', '800', '1000', '1500']) {
   assert(difficultyPage.includes(`<option>${rating}</option>`), `difficulty simulation must offer ${rating}`);
+}
+for (const [value, label] of [['500', '500'], ['10000', '10,000'], ['20000', '20,000'], ['100000', '100,000']]) {
+  assert(new RegExp(`<option(?: value="${value}")?(?: selected)?>${label}</option>`).test(difficultyPage), `difficulty simulation must offer upper limit ${label}`);
 }
 for (const pagePath of ['dist/index.html', 'dist/techniques.html', 'dist/validator.html', 'dist/simulation.html', 'dist/simulation-difficulty.html']) {
   const page = read(pagePath);
@@ -42,7 +46,7 @@ for (const pagePath of ['dist/simulation.html', 'dist/simulation-difficulty.html
   const page = read(pagePath);
   assert(page.includes('id="simulation-toggle"'), `${pagePath} must provide a single simulation toggle`);
   assert(!page.includes('id="run"') && !page.includes('id="halt"'), `${pagePath} must not retain separate Run and Halt buttons`);
-  assert((page.match(/class="simulation-option"/g) ?? []).length === 2, `${pagePath} must separate its two options into paragraphs`);
+  assert((page.match(/class="simulation-option"/g) ?? []).length >= 2, `${pagePath} must separate its options into paragraphs`);
   for (const [value, label] of [['1000', '1,000'], ['10000', '10,000'], ['100000', '100,000'], ['1000000', '1,000,000']]) {
     assert(new RegExp(`<option value="${value}"(?: selected)?>${label}</option>`).test(page), `${pagePath} must format ${value} trial(s) with commas`);
   }

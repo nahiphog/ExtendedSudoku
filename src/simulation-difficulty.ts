@@ -3,6 +3,7 @@ const { ACTIVE_CELLS, generateCompletedGrid, digSingleCell } = window.ExtendedSu
 
 const trials = document.querySelector('#trials');
 const minimum = document.querySelector('#minimum-difficulty');
+const maximum = document.querySelector('#maximum-difficulty');
 const toggle = document.querySelector('#simulation-toggle');
 const simStatus = document.querySelector('#sim-status');
 const selected = document.querySelector('#selected');
@@ -116,6 +117,12 @@ const startSimulation = () => {
   selected.replaceChildren();
   const total = Number(trials.value);
   const minimumRating = Number(minimum.value);
+  const maximumRating = Number(maximum.value);
+  if (minimumRating > maximumRating) {
+    setRunning(false);
+    simStatus.textContent = 'Choose an upper limit that is at least the lower difficulty limit.';
+    return;
+  }
   let done = 0;
   let elapsed = 0;
   const qualifying = [];
@@ -136,7 +143,7 @@ const startSimulation = () => {
     done += 1;
     const before = qualifying.length;
     if (result.unknown) unknown.push({ puzzle });
-    else if (result.rating >= minimumRating && qualifying.length < 2) qualifying.push({ puzzle, rating: result.rating });
+    else if (result.rating >= minimumRating && result.rating <= maximumRating && qualifying.length < 2) qualifying.push({ puzzle, rating: result.rating });
     simStatus.textContent = `${done}/${total} trials · average ${(elapsed / done).toFixed(1)} ms · ${qualifying.length} qualifying result(s) · ${unknown.length} unknown rating(s) · shared single-cell digging`;
     if (qualifying.length > before || result.unknown) show(qualifying, unknown, true);
     if (done < total && !halted) setTimeout(tick, 0);

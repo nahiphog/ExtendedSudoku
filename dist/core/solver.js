@@ -327,7 +327,10 @@ export const findXYWing = (candidates) => {
                     continue;
                 const eliminations = commonCandidatePeers(candidates, [first, second], z).map((cell) => ({ cell, digit: z }));
                 if (eliminations.length)
-                    return eliminationMove('XY-Wing', eliminations, [pivot, first, second], `An XY-Wing with pivot ${describeCell(pivot)} removes ${z} from cells seeing both wings.`);
+                    return eliminationMove('XY-Wing', eliminations, [pivot, first, second], `XY-Wing: the pivot ${describeCell(pivot)} has candidates {${Array.from(pivotDigits).join(', ')}}. ` +
+                        `Wing ${describeCell(first)} has {${Array.from(firstDigits).join(', ')}} and shares ${sharedFirst[0]} with the pivot; ` +
+                        `wing ${describeCell(second)} has {${Array.from(secondDigits).join(', ')}} and shares ${sharedSecond[0]}. ` +
+                        `Both wings contain ${z}. Whichever pivot candidate is true forces ${z} into one wing, so ${z} is removed from every cell that sees both wings.`);
             }
     }
     return null;
@@ -348,7 +351,9 @@ export const findXYZWing = (candidates) => {
                 const z = shared[0];
                 const eliminations = commonCandidatePeers(candidates, [pivot, first, second], z).map((cell) => ({ cell, digit: z }));
                 if (eliminations.length)
-                    return eliminationMove('XYZ-Wing', eliminations, [pivot, first, second], `An XYZ-Wing with pivot ${describeCell(pivot)} removes ${z} from cells seeing all three pattern cells.`);
+                    return eliminationMove('XYZ-Wing', eliminations, [pivot, first, second], `XYZ-Wing: pivot ${describeCell(pivot)} has {${Array.from(pivotDigits).join(', ')}}, while its two peer wings ` +
+                        `${describeCell(first)} {${Array.from(firstDigits).join(', ')}} and ${describeCell(second)} {${Array.from(secondDigits).join(', ')}} ` +
+                        `together use exactly those same three candidates. The wings share ${z}; therefore a cell that sees the pivot and both wings cannot also contain ${z}, which is eliminated from those common peers.`);
             }
     }
     return null;
@@ -361,7 +366,8 @@ export const findWWing = (candidates) => {
                 continue;
             for (const strongDigit of firstDigits) {
                 const other = Array.from(firstDigits).find((digit) => digit !== strongDigit);
-                for (const unit of UNITS) {
+                for (let unitIndex = 0; unitIndex < UNITS.length; unitIndex += 1) {
+                    const unit = UNITS[unitIndex];
                     const link = unit.filter((cell) => candidates.get(cell)?.has(strongDigit));
                     // A W-Wing's conjugate pair is a separate strong link.  An endpoint
                     // cannot double as one of that link's cells: doing so incorrectly
@@ -373,7 +379,10 @@ export const findWWing = (candidates) => {
                         continue;
                     const eliminations = commonCandidatePeers(candidates, [first, second], other).map((cell) => ({ cell, digit: other }));
                     if (eliminations.length)
-                        return eliminationMove('W-Wing', eliminations, [first, second, ...link], `A W-Wing linked by ${strongDigit} removes ${other} from cells seeing both wing cells.`);
+                        return eliminationMove('W-Wing', eliminations, [first, second, ...link], `W-Wing: ${describeCell(first)} and ${describeCell(second)} are non-seeing cells with the identical pair ` +
+                            `{${Array.from(firstDigits).join(', ')}}. In ${unitLabel(unitIndex)}, ${strongDigit} forms the conjugate pair ` +
+                            `${describeCell(link[0])} / ${describeCell(link[1])}, with one link cell seeing each wing. Because ${strongDigit} must occupy one of those two link cells, ` +
+                            `the alternative candidate ${other} cannot remain in any cell that sees both W-Wing endpoints.`);
                 }
             }
         }
