@@ -95,3 +95,36 @@ h2 { margin: 22px 0 10px; font-size: 1rem; }
 .technique-ratings th, .technique-ratings td { border: 1px solid #000; padding: 8px; text-align: left; }
 .technique-ratings th:nth-child(2), .technique-ratings td:nth-child(2) { text-align: right; }
 .license-note { margin-top: 28px; font-size: .9rem; }
+
+/* A playful, jewel-toned visual layer for the maker. */
+:root { --ink: #20223d; --paper: #fffdf8; --violet: #6956d9; --indigo: #3447b9; --teal: #138b9d; --coral: #e16e62; --sun: #ffd66b; --mist: #edf0ff; }
+body { display: block; padding: 86px 20px 42px; color: var(--ink); background: radial-gradient(circle at 8% 4%, #ffe4bd 0 12%, transparent 31%), radial-gradient(circle at 90% 8%, #cfeeff 0 13%, transparent 33%), linear-gradient(135deg, #f6f2ff, #effbfa 52%, #fff4e8); font-family: "Trebuchet MS", Arial, sans-serif; }
+body::before { content: ""; position: fixed; inset: auto -90px -115px auto; width: 330px; height: 330px; z-index: -1; border-radius: 50%; background: #ded6ff; opacity: .52; }
+.site-nav { top: 18px; left: 20px; }
+.site-nav select { border: 0; border-radius: 999px; padding: 10px 14px; color: var(--ink); background: #fff; box-shadow: 0 5px 16px #1d24501c; font-family: inherit; }
+.site-title { top: 21px; left: 116px; color: var(--indigo); font: 800 clamp(1.05rem, 2.7vw, 1.48rem)/1 "Trebuchet MS", Arial, sans-serif; letter-spacing: .025em; text-shadow: 0 2px 0 #fff; }
+.layout { width: min(96vw, 1160px); margin: 0 auto; padding: clamp(20px, 3vw, 34px); border: 1px solid #ffffffbd; border-radius: 24px; background: #fffdf8e8; box-shadow: 0 20px 52px #252f6524; }
+h1 { color: var(--indigo); font-family: Georgia, serif; letter-spacing: -.025em; }
+h2, h3 { color: #394080; }
+.techniques-link, .back-link { color: var(--teal); text-decoration: none; }
+.techniques-link:hover, .back-link:hover { color: var(--coral); }
+.grid { border-color: var(--ink); border-radius: 10px; overflow: hidden; box-shadow: 0 8px 20px #20223d1f; }
+.cell { border-color: #aeb4d5; background: #fffefa; color: var(--ink); }
+.grey { background: #20223d; }
+.v-divider { border-right-color: var(--ink); }
+.h-divider { border-bottom-color: var(--ink); }
+.cell:not(.grey):hover, .cell:not(.grey):focus-visible { background: #fff0bf; box-shadow: inset 0 0 0 2px var(--coral); }
+.generate { border: 0; border-radius: 12px; color: #fff; background: linear-gradient(120deg, var(--violet), var(--teal)); box-shadow: 0 8px 16px #4c56a34a; font-family: inherit; }
+.generate:hover, .generate:focus-visible { color: #fff; background: linear-gradient(120deg, var(--coral), #d05ca5); transform: translateY(-1px); }
+.generate[aria-pressed="true"] { background: linear-gradient(120deg, #d64d63, #e78150); }
+.actions button, .completed-heading button, .step-controls button, .step-controls select { border-color: #bcc2e5; border-radius: 9px; color: var(--indigo); background: #f7f6ff; font-family: inherit; }
+.actions button:hover, .actions button:focus-visible, .completed-heading button:hover, .completed-heading button:focus-visible, .step-controls button:hover:not(:disabled), .step-controls button:focus-visible:not(:disabled) { color: #fff; background: var(--indigo); }
+.well, .statistics, .validator-card { border-color: #d9c5ff; border-radius: 14px; background: linear-gradient(135deg, #fff, #f8f5ff); box-shadow: 0 8px 22px #2d397014; }
+.statistics th { color: #fff; background: var(--indigo); }
+.statistics th, .statistics td, .technique-ratings th, .technique-ratings td { border-color: #d7d9ed; }
+.technique-ratings th { color: #fff; background: var(--teal); }
+.techniques-page section { border-top-color: #d8d2ff; }
+.simulation-option { margin: 14px 0; padding: 13px 15px; border-radius: 12px; background: var(--mist); }
+.simulation-option label { color: #30376e; font-weight: 700; }
+.simulation-option select { margin-left: 8px; padding: 6px 8px; border: 1px solid #b9c1e7; border-radius: 8px; color: var(--ink); background: #fff; font: inherit; }
+@media (max-width: 720px) { body { padding: 82px 10px 28px; } .site-title { left: 92px; text-align: right; } .layout { padding: 18px; border-radius: 18px; } }

@@ -2,12 +2,19 @@
 const { ACTIVE_CELLS, generateCompletedGrid, digSingleCell } = window.ExtendedSudokuCore;
 const trials = document.querySelector('#trials');
 const limit = document.querySelector('#limit');
-const run = document.querySelector('#run');
-const halt = document.querySelector('#halt');
+const toggle = document.querySelector('#simulation-toggle');
 const simStatus = document.querySelector('#sim-status');
 const selected = document.querySelector('#selected');
 for (let count = 1; count <= 108; count += 1) limit.add(new Option(count, count, count === 30, count === 30));
 let halted = false;
+let running = false;
+let runId = 0;
+
+const setRunning = (value) => {
+  running = value;
+  toggle.textContent = value ? 'Halt simulation' : 'Run single-cell simulation';
+  toggle.setAttribute('aria-pressed', String(value));
+};
 
 const stringify = (values) => values.map((value) => value || '.').join('');
 const clueCount = (values) => ACTIVE_CELLS.filter((cell) => values[cell]).length;
@@ -49,8 +56,11 @@ function show(qualifying, latest, clueLimit, focus = false) {
   if (focus) selected.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-run.onclick = () => {
+const startSimulation = () => {
+  runId += 1;
+  const thisRun = runId;
   halted = false;
+  setRunning(true);
   selected.replaceChildren();
   const total = Number(trials.value);
   const clueLimit = Number(limit.value);
@@ -59,12 +69,14 @@ run.onclick = () => {
   let latest = null;
   const qualifying = [];
   const tick = () => {
+    if (thisRun !== runId) return;
     if (halted || done >= total) {
       const state = halted ? 'halted' : 'complete';
       simStatus.textContent = `${done}/${total} trials · average ${(elapsed / Math.max(1, done)).toFixed(1)} ms · ${qualifying.length} qualifying result(s) · ${state} · shared single-cell digging`;
       // A halted simulation should preserve only results that already met the
       // chosen criterion; a partially completed trial is not a result.
       show(qualifying, halted ? null : latest, clueLimit);
+      setRunning(false);
       return;
     }
     const startedAt = performance.now();
@@ -81,4 +93,13 @@ run.onclick = () => {
   tick();
 };
 
-halt.onclick = () => { halted = true; };
+toggle.onclick = () => {
+  if (running) {
+    halted = true;
+    runId += 1;
+    setRunning(false);
+    simStatus.textContent = 'Simulation halted.';
+    return;
+  }
+  startSimulation();
+};

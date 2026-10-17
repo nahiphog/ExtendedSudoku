@@ -3,8 +3,7 @@ const { ACTIVE_CELLS, generateCompletedGrid, digSingleCell } = window.ExtendedSu
 
 const trials = document.querySelector('#trials');
 const minimum = document.querySelector('#minimum-difficulty');
-const run = document.querySelector('#run');
-const halt = document.querySelector('#halt');
+const toggle = document.querySelector('#simulation-toggle');
 const simStatus = document.querySelector('#sim-status');
 const selected = document.querySelector('#selected');
 const weights = {
@@ -22,10 +21,16 @@ const weights = {
 };
 
 let halted = false;
+let running = false;
 let activeWorker = null;
 let settleActiveWorker = null;
 let runId = 0;
 const ratingTimeoutMs = 2000;
+const setRunning = (value) => {
+  running = value;
+  toggle.textContent = value ? 'Halt simulation' : 'Run single-cell simulation';
+  toggle.setAttribute('aria-pressed', String(value));
+};
 const stringify = (values) => values.map((value) => value || '.').join('');
 const clueCount = (values) => ACTIVE_CELLS.filter((cell) => values[cell]).length;
 const difficultyRating = (moves) => moves.reduce((total, move) => total + (weights[move.technique] ?? 0), 0);
@@ -101,12 +106,13 @@ function calculateDifficulty(puzzle) {
   });
 }
 
-run.onclick = () => {
+const startSimulation = () => {
   runId += 1;
   const thisRun = runId;
   activeWorker?.terminate();
   settleActiveWorker?.({ cancelled: true });
   halted = false;
+  setRunning(true);
   selected.replaceChildren();
   const total = Number(trials.value);
   const minimumRating = Number(minimum.value);
@@ -115,15 +121,17 @@ run.onclick = () => {
   const qualifying = [];
   const unknown = [];
   const tick = async () => {
-    if (thisRun !== runId || halted || done >= total) {
+    if (thisRun !== runId) return;
+    if (halted || done >= total) {
       const state = halted ? 'halted' : 'complete';
       simStatus.textContent = `${done}/${total} trials · average ${(elapsed / Math.max(1, done)).toFixed(1)} ms · ${qualifying.length} qualifying result(s) · ${unknown.length} unknown rating(s) · ${state} · shared single-cell digging`;
+      setRunning(false);
       return;
     }
     const startedAt = performance.now();
     const puzzle = digSingleCell(generateCompletedGrid());
     const result = await calculateDifficulty(puzzle);
-    if (thisRun !== runId) return;
+    if (thisRun !== runId || halted || result.cancelled) return;
     elapsed += performance.now() - startedAt;
     done += 1;
     const before = qualifying.length;
@@ -137,8 +145,14 @@ run.onclick = () => {
   tick();
 };
 
-halt.onclick = () => {
+toggle.onclick = () => {
+  if (!running) {
+    startSimulation();
+    return;
+  }
   halted = true;
   activeWorker?.terminate();
   settleActiveWorker?.({ cancelled: true });
+  setRunning(false);
+  simStatus.textContent = 'Simulation halted.';
 };
