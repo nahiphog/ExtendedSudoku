@@ -1,6 +1,6 @@
-import { ACTIVE_CELLS, isBlackCell, positionOf, parsePuzzle } from './core/grid.js';
-import { applyPlacement, buildCandidates, removeCandidate } from './core/candidates.js';
-import { findSolutions, solveWithTechniques } from './core/solver.js';
+"use strict";
+// @ts-nocheck
+const { ACTIVE_CELLS, isBlackCell, positionOf, parsePuzzle, applyPlacement, buildCandidates, removeCandidate, findSolutions, solveWithTechniques } = window.ExtendedSudokuCore;
 const input = document.querySelector('#puzzle-input');
 const button = document.querySelector('#check-puzzle');
 const validatorStatus = document.querySelector('#validator-status');
@@ -192,6 +192,7 @@ button.addEventListener('click', () => {
     if (found.length > 1) {
         validatorStatus.textContent = 'This puzzle is not unique. Two solutions are shown; differing cells are orange.';
         solutions.append(createSolutionCard('Solution 1', found[0], givens, found[1]), createSolutionCard('Solution 2', found[1], givens, found[0]));
+        solutions.scrollIntoView({ behavior: 'smooth', block: 'start' });
         return;
     }
     const solved = solveWithTechniques(givens, true);
@@ -204,4 +205,5 @@ button.addEventListener('click', () => {
     heading.textContent = 'Unique solution';
     card.append(heading, createWalkthrough(givens, solved.moves));
     solutions.append(card);
+    solutions.scrollIntoView({ behavior: 'smooth', block: 'start' });
 });

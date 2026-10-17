@@ -1,6 +1,7 @@
 import { parsePuzzle } from '../dist/core/grid.js';
 import { applyPlacement, buildCandidates, removeCandidate } from '../dist/core/candidates.js';
 import { findSolutions, isConsistent, solveWithTechniques } from '../dist/core/solver.js';
+import { digSingleCell, generateCompletedGrid } from '../dist/core/generator.js';
 
 const assert = (condition, message) => {
   if (!condition) throw new Error(message);
@@ -42,5 +43,10 @@ assert(replay.every((digit, cell) => digit === result.solution[cell]), 'replayed
 
 const blackCellInput = `${fixture.slice(0, 9)}1${fixture.slice(10)}`;
 assert(parsePuzzle(blackCellInput).errors.length > 0, 'a digit in a black cell must be rejected');
+
+const generated = generateCompletedGrid();
+assert(isConsistent(generated), 'a generated completed grid must be consistent');
+const dug = digSingleCell(generated);
+assert(findSolutions(dug, 2).length === 1, 'single-cell digging must retain one solution');
 
 console.log(`Passed ${result.moves.length} validated walkthrough moves.`);

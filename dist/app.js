@@ -1,6 +1,6 @@
+"use strict";
 // @ts-nocheck
-import { applyPlacement, buildCandidates, removeCandidate } from './core/candidates.js';
-import { solveWithTechniques } from './core/solver.js';
+const { applyPlacement, buildCandidates, removeCandidate, solveWithTechniques, generateCompletedGrid, digSingleCell } = window.ExtendedSudokuCore;
 const greyAreas = [[1, 10], [4, 7], [7, 4], [10, 1]];
 const grid = document.querySelector('#grid');
 const well = document.querySelector('#well');
@@ -66,68 +66,20 @@ generator.addEventListener('click', () => {
         }
         return result;
     };
-    const solution = Array.from({ length: 12 }, () => Array(12).fill(0));
-    const rowMasks = Array(12).fill(0);
-    const columnMasks = Array(12).fill(0);
-    const boxMasks = Array(16).fill(0);
-    const solve = remaining => {
-        if (remaining === 0)
-            return true;
-        let best;
-        let candidates;
-        for (const entry of playableCells) {
-            const { row, column, box } = entry;
-            if (solution[row - 1][column - 1])
-                continue;
-            const mask = 0x1ff & ~(rowMasks[row - 1] | columnMasks[column - 1] | boxMasks[box - 1]);
-            const options = [];
-            for (let digit = 1; digit <= 9; digit += 1)
-                if (mask & (1 << (digit - 1)))
-                    options.push(digit);
-            if (!options.length)
-                return false;
-            if (!best || options.length < candidates.length) {
-                best = entry;
-                candidates = options;
-                if (options.length === 1)
-                    break;
-            }
-        }
-        for (const digit of shuffle(candidates)) {
-            const { row, column, box } = best;
-            const bit = 1 << (digit - 1);
-            solution[row - 1][column - 1] = digit;
-            rowMasks[row - 1] |= bit;
-            columnMasks[column - 1] |= bit;
-            boxMasks[box - 1] |= bit;
-            if (solve(remaining - 1))
-                return true;
-            solution[row - 1][column - 1] = 0;
-            rowMasks[row - 1] ^= bit;
-            columnMasks[column - 1] ^= bit;
-            boxMasks[box - 1] ^= bit;
-        }
-        return false;
-    };
-    solve(playableCells.length);
-    for (let digit = 1; digit <= 9; digit += 1) {
-        for (let box = 1; box <= 16; box += 1) {
-            const entry = playableCells.find(cell => cell.box === box && solution[cell.row - 1][cell.column - 1] === digit);
-            if (!entry)
-                continue;
-            entry.cell.textContent = digit;
-            values[entry.row - 1][entry.column - 1] = digit;
-        }
-    }
-    const complete = solution.flat();
-    const puzzle = [...complete];
-    let removed = 0;
+    const complete = generateCompletedGrid();
+    playableCells.forEach(entry => {
+        const cell = (entry.row - 1) * 12 + entry.column - 1;
+        entry.cell.textContent = complete[cell];
+        values[entry.row - 1][entry.column - 1] = complete[cell];
+    });
+    let puzzle = diggingMode.value === 'single' ? digSingleCell(complete) : [...complete];
+    let removed = diggingMode.value === 'single' ? playableCells.length - puzzle.filter(Boolean).length : 0;
     const diggingTargets = diggingMode.value === 'dual'
         ? shuffle(playableCells).filter(entry => {
             const mirror = playableCells.find(other => other.row === 13 - entry.row && other.column === 13 - entry.column);
             return mirror && (entry.row < mirror.row || (entry.row === mirror.row && entry.column <= mirror.column));
         })
-        : shuffle(playableCells);
+        : [];
     for (const entry of diggingTargets) {
         const cell = (entry.row - 1) * 12 + entry.column - 1;
         const mirrorEntry = diggingMode.value === 'dual'

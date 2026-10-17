@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import vm from 'node:vm';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const assert = (condition, message) => { if (!condition) throw new Error(message); };
@@ -9,17 +10,25 @@ const read = (path) => readFileSync(resolve(root, path), 'utf8');
 const pages = [
   ['dist/index.html', 'app.js'],
   ['dist/validator.html', 'validator.js'],
+  ['dist/simulation.html', 'simulation.js'],
 ];
 
 for (const [pagePath, scriptName] of pages) {
   const page = read(pagePath);
-  assert(page.includes(`type="module" src="./${scriptName}"`), `${pagePath} must load ${scriptName} as an ES module`);
+  assert(page.includes('src="./core/extended-sudoku-core.js"'), `${pagePath} must load the local-file-safe solver bundle`);
+  assert(page.includes(`src="./${scriptName}"`), `${pagePath} must load ${scriptName}`);
+  assert(!page.includes(`type="module" src="./${scriptName}"`), `${pagePath} must not require file:// module imports`);
   const scriptPath = resolve(root, 'dist', scriptName);
   assert(existsSync(scriptPath), `${scriptName} must be emitted by TypeScript`);
   const script = read(`dist/${scriptName}`);
-  for (const specifier of script.matchAll(/from ['"](\.\/[^'"]+)['"]/g)) {
-    assert(existsSync(resolve(dirname(scriptPath), specifier[1])), `${scriptName} import ${specifier[1]} must resolve`);
-  }
+  assert(!/^import /m.test(script), `${scriptName} must be runnable from file:// without imports`);
+}
+
+assert(existsSync(resolve(root, 'dist/core/extended-sudoku-core.js')), 'the shared browser solver bundle must be emitted');
+const browserContext = { window: {} };
+vm.runInNewContext(read('dist/core/extended-sudoku-core.js'), browserContext);
+for (const functionName of ['solveWithTechniques', 'buildCandidates', 'findSolutions', 'generateCompletedGrid', 'digSingleCell']) {
+  assert(typeof browserContext.window.ExtendedSudokuCore?.[functionName] === 'function', `browser bundle must expose ${functionName}`);
 }
 
 console.log('Passed Generate and Verify module preflight.');

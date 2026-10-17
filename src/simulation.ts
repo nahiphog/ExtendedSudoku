@@ -1,6 +1,79 @@
 // @ts-nocheck
-const black=i=>{const r=Math.floor(i/12)+1,c=i%12+1;return [[1,10],[4,7],[7,4],[10,1]].some(([a,b])=>r>=a&&r<a+3&&c>=b&&c<b+3)};const cells=[...Array(144).keys()].filter(i=>!black(i));const layout=window.ExtendedEngine.buildLayout(black),trials=document.querySelector('#trials'),limit=document.querySelector('#limit'),run=document.querySelector('#run'),halt=document.querySelector('#halt'),simStatus=document.querySelector('#sim-status'),selected=document.querySelector('#selected');for(let i=1;i<=108;i++)limit.add(new Option(i,i,i===30,i===30));let halted=false;
-const sh=a=>{a=[...a];for(let i=a.length-1;i;i--){let j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};function make(){let v=Array(144).fill(0);const go=()=>{let b=-1,o;for(const i of cells)if(!v[i]){let r=i/12|0,c=i%12,br=r/3|0,bc=c/3|0,u=new Set;for(let n=0;n<12;n++){u.add(v[r*12+n]);u.add(v[n*12+c])}for(let y=0;y<3;y++)for(let x=0;x<3;x++)u.add(v[(br*3+y)*12+bc*3+x]);let q=sh([1,2,3,4,5,6,7,8,9].filter(d=>!u.has(d)));if(!q.length)return false;if(!o||q.length<o.length){b=i;o=q}}if(b<0)return true;for(const d of o){v[b]=d;if(go())return true;v[b]=0}return false};go();for(const i of sh(cells)){let d=v[i];v[i]=0;if(window.ExtendedEngine.countSolutions(v,layout,2)!==1)v[i]=d}return v}
-function show(results){selected.replaceChildren();let list=document.createElement('ol');results.forEach(v=>{let item=document.createElement('li'),text=v.map(x=>x||'.').join(''),code=document.createElement('code'),button=document.createElement('button');code.textContent=text;button.textContent='Copy';button.onclick=()=>navigator.clipboard.writeText(text);item.append(code,button);list.append(item)});selected.append(list)}
-run.onclick=()=>{halted=false;selected.replaceChildren();let total=+trials.value,done=0,sum=0,results=[];const tick=()=>{let end=Math.min(total,done+1);for(;done<end&&!halted;done++){let t=performance.now(),v=make();sum+=performance.now()-t;let n=cells.filter(i=>v[i]).length;if(n<=+limit.value)results.push(v)}simStatus.textContent=`${done}/${total} trials · average ${(sum/Math.max(1,done)).toFixed(1)} ms · ${results.length} qualifying result(s) · single-cell digging`;show(results);if(done<total&&!halted)setTimeout(tick,0)};tick()};halt.onclick=()=>halted=true;
+const { ACTIVE_CELLS, generateCompletedGrid, digSingleCell } = window.ExtendedSudokuCore;
+const trials = document.querySelector('#trials');
+const limit = document.querySelector('#limit');
+const run = document.querySelector('#run');
+const halt = document.querySelector('#halt');
+const simStatus = document.querySelector('#sim-status');
+const selected = document.querySelector('#selected');
+for (let count = 1; count <= 108; count += 1) limit.add(new Option(count, count, count === 30, count === 30));
+let halted = false;
 
+const stringify = (values) => values.map((value) => value || '.').join('');
+const clueCount = (values) => ACTIVE_CELLS.filter((cell) => values[cell]).length;
+
+function copyButton(text) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.textContent = 'Copy';
+  button.onclick = async () => {
+    try { await navigator.clipboard.writeText(text); button.textContent = 'Copied'; }
+    catch { button.textContent = 'Copy failed'; }
+  };
+  return button;
+}
+
+function renderPuzzle(label, values) {
+  const item = document.createElement('li');
+  const title = document.createElement('strong');
+  title.textContent = `${label} — ${clueCount(values)} given cells`;
+  const code = document.createElement('code');
+  const text = stringify(values);
+  code.textContent = text;
+  item.append(title, code, copyButton(text));
+  return item;
+}
+
+function show(qualifying, latest, clueLimit) {
+  selected.replaceChildren();
+  const list = document.createElement('ol');
+  if (qualifying.length) {
+    qualifying.forEach((values, index) => list.append(renderPuzzle(`Qualifying result ${index + 1}`, values)));
+  } else if (latest) {
+    const notice = document.createElement('p');
+    notice.textContent = `No trial met the “at most ${clueLimit}” cap yet. The most recent single-cell-dug puzzle is shown below.`;
+    selected.append(notice);
+    list.append(renderPuzzle('Most recent trial', latest));
+  }
+  selected.append(list);
+  selected.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+run.onclick = () => {
+  halted = false;
+  selected.replaceChildren();
+  const total = Number(trials.value);
+  const clueLimit = Number(limit.value);
+  let done = 0;
+  let elapsed = 0;
+  let latest = null;
+  const qualifying = [];
+  const tick = () => {
+    if (halted || done >= total) {
+      simStatus.textContent = `${done}/${total} trials · average ${(elapsed / Math.max(1, done)).toFixed(1)} ms · ${qualifying.length} qualifying result(s) · shared single-cell digging`;
+      show(qualifying, latest, clueLimit);
+      return;
+    }
+    const startedAt = performance.now();
+    latest = digSingleCell(generateCompletedGrid());
+    elapsed += performance.now() - startedAt;
+    done += 1;
+    if (clueCount(latest) <= clueLimit && qualifying.length < 2) qualifying.push(latest);
+    simStatus.textContent = `${done}/${total} trials · average ${(elapsed / done).toFixed(1)} ms · ${qualifying.length} qualifying result(s) · shared single-cell digging`;
+    if (done < total && !halted) setTimeout(tick, 0);
+    else show(qualifying, latest, clueLimit);
+  };
+  tick();
+};
+
+halt.onclick = () => { halted = true; };

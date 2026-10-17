@@ -1,7 +1,7 @@
 {
   "type": "module",
   "scripts": {
-    "build": "tsc --project tsconfig.json",
+    "build": "tsc --project tsconfig.json && node scripts/build-browser-core.mjs",
     "test": "npm run build && node scripts/test-solver.mjs && node scripts/test-site-build.mjs"
   },
   "devDependencies": {
