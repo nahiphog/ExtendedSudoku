@@ -34,7 +34,7 @@ function renderPuzzle(label, values) {
   return item;
 }
 
-function show(qualifying, latest, clueLimit) {
+function show(qualifying, latest, clueLimit, focus = false) {
   selected.replaceChildren();
   const list = document.createElement('ol');
   if (qualifying.length) {
@@ -46,7 +46,7 @@ function show(qualifying, latest, clueLimit) {
     list.append(renderPuzzle('Most recent trial', latest));
   }
   selected.append(list);
-  selected.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  if (focus) selected.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 run.onclick = () => {
@@ -68,8 +68,10 @@ run.onclick = () => {
     latest = digSingleCell(generateCompletedGrid());
     elapsed += performance.now() - startedAt;
     done += 1;
+    const qualifyingCountBefore = qualifying.length;
     if (clueCount(latest) <= clueLimit && qualifying.length < 2) qualifying.push(latest);
     simStatus.textContent = `${done}/${total} trials · average ${(elapsed / done).toFixed(1)} ms · ${qualifying.length} qualifying result(s) · shared single-cell digging`;
+    if (qualifying.length > qualifyingCountBefore) show(qualifying, latest, clueLimit);
     if (done < total && !halted) setTimeout(tick, 0);
     else show(qualifying, latest, clueLimit);
   };
