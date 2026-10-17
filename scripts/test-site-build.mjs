@@ -36,6 +36,8 @@ for (const rating of ['300', '400', '500', '600', '700', '800', '1000', '1500'])
 for (const pagePath of ['dist/index.html', 'dist/techniques.html', 'dist/validator.html', 'dist/simulation.html', 'dist/simulation-difficulty.html']) {
   assert(read(pagePath).includes('simulation-difficulty.html'), `${pagePath} must link to Simulation difficulty`);
 }
+const techniquesPage = read('dist/techniques.html');
+assert(techniquesPage.includes('<td>Empty Rectangle</td><td>120</td><td>Active</td>'), 'technique ratings must show Empty Rectangle as active with SudokUI difficulty 120');
 
 assert(existsSync(resolve(root, 'dist/core/extended-sudoku-core.js')), 'the shared browser solver bundle must be emitted');
 const browserContext = { window: {} };

@@ -6,9 +6,9 @@ const button = document.querySelector('#check-puzzle');
 const validatorStatus = document.querySelector('#validator-status');
 const solutions = document.querySelector('#solutions');
 const techniqueWeights = {
-    'Snyder Notation': 0, 'Naked Single': 4, 'Hidden Single': 6, 'Locked Candidates': 8,
-    'Naked Pair': 10, 'Hidden Pair': 12, 'Naked Quad': 18, 'Hidden Quad': 20,
-    'Empty Rectangle': 24, 'XY-Wing': 26, 'XYZ-Wing': 28, 'W-Wing': 30, 'Brute force': 10000,
+    'Snyder Notation': 0, 'Naked Single': 4, 'Hidden Single': 14, 'Locked Candidates': 50,
+    'Naked Pair': 60, 'Hidden Pair': 70, 'Naked Quad': 120, 'Hidden Quad': 150,
+    'Empty Rectangle': 120, 'XY-Wing': 160, 'XYZ-Wing': 180, 'W-Wing': 150, 'Brute force': 10000,
 };
 const createCell = (cell, values, givens, candidates, eliminated = new Set(), highlighted = new Set()) => {
     const { row, column } = positionOf(cell);
