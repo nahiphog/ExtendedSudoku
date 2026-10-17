@@ -252,8 +252,10 @@ const greyAreas = [[1, 10], [4, 7], [7, 4], [10, 1]];
           if (!candidateMap.size) return trace;
           const nakedSingle = Array.from(candidateMap, ([cell, candidates]) => ({ cell, candidates })).find(({ candidates }) => candidates.length === 1);
           if (nakedSingle) {
-            trace.push({ cell: nakedSingle.cell, digit: complete[nakedSingle.cell], technique: 'Naked Single' });
-            working[nakedSingle.cell] = complete[nakedSingle.cell];
+            const digit = nakedSingle.candidates[0];
+            if (digit !== complete[nakedSingle.cell]) return trace;
+            trace.push({ cell: nakedSingle.cell, digit, technique: 'Naked Single' });
+            working[nakedSingle.cell] = digit;
             continue;
           }
           let hiddenSingle = null;
@@ -268,8 +270,9 @@ const greyAreas = [[1, 10], [4, 7], [7, 4], [10, 1]];
             if (hiddenSingle) break;
           }
           if (hiddenSingle) {
-            trace.push({ cell: hiddenSingle.cell, digit: complete[hiddenSingle.cell], technique: 'Hidden Single' });
-            working[hiddenSingle.cell] = complete[hiddenSingle.cell];
+            if (hiddenSingle.digit !== complete[hiddenSingle.cell]) return trace;
+            trace.push({ cell: hiddenSingle.cell, digit: hiddenSingle.digit, technique: 'Hidden Single' });
+            working[hiddenSingle.cell] = hiddenSingle.digit;
             continue;
           }
           const advanced = findLockedCandidateEliminations(candidateMap)
