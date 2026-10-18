@@ -39,6 +39,9 @@ assert(aboutScript.includes("document.querySelector('.site-title')") && aboutScr
 assert(aboutScript.includes("document.querySelector('.site-nav')") && aboutScript.includes('siteTitle.prepend(siteNav)'), 'the navigation menu must be placed inside the header');
 const styles = read('dist/styles.css');
 assert(styles.includes('left: 0; right: 0; width: 100vw') && styles.includes('position: absolute; top: 50%; left: 20px'), 'the header must span the viewport with navigation on its left');
+const generatePage = read('dist/index.html');
+assert(!generatePage.includes('<h1>Generate a puzzle</h1>') && generatePage.includes('class="generate-controls"'), 'the Generate page must use compact inline controls without a redundant heading');
+assert(styles.includes('.generate-top { display: inline-block; width: auto;') && styles.includes('.difficulty-rating-value'), 'the Generate controls and rating need legible compact styling');
 
 const generatorSource = read('src/app.ts');
 assert(generatorSource.includes("classList.toggle('given-number', Boolean(puzzle[cell]))"), 'the completed grid must mark final-grid givens as black');

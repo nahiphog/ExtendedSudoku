@@ -25,6 +25,11 @@ h2 { margin: 22px 0 10px; font-size: 1rem; }
 .well { display: block; min-height: 44px; margin-top: 16px; padding: 12px 14px; border: 2px solid #000; font-size: 16px; }
 #final-section { margin: 28px 0; }
 #generation-summary { font-weight: 600; }
+.difficulty-rating-value { color: var(--violet); font-size: 1.16em; font-weight: 800; }
+.generate-controls { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.generate-controls .digging-mode { font-weight: 700; }
+.generate-controls .digging-mode select { margin-left: 6px; padding: 8px 10px; border: 1px solid #b9c1e7; border-radius: 9px; color: var(--ink); background: #fff; font: inherit; }
+.generate-top { display: inline-block; width: auto; margin: 0; padding: 10px 16px; }
 .final-grid .cell { display: grid; place-items: center; position: relative; cursor: default; }
 .final-grid .cell:hover { background: #fff; }
 .final-grid .grey:hover { background: #000; }
