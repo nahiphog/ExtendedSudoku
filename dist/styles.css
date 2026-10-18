@@ -138,9 +138,10 @@ h2, h3 { color: #394080; }
 #simulation-toggle { display: inline-block; width: fit-content; padding-inline: 20px; }
 .simulation-histogram { margin: 22px 0; }
 .simulation-histogram h2 { margin-bottom: 8px; }
-.clue-histogram { display: flex; align-items: flex-end; gap: 2px; height: 190px; padding: 12px 6px 0; border-bottom: 2px solid var(--ink); overflow-x: auto; background: #f7f6ff; }
+.clue-histogram { display: flex; align-items: flex-end; gap: 2px; height: 190px; padding: 12px 6px 25px; border-bottom: 2px solid var(--ink); overflow-x: auto; background: #f7f6ff; }
 .clue-histogram-bar { position: relative; flex: 0 0 21px; min-height: 2px; background: var(--teal); border-radius: 3px 3px 0 0; }
 .clue-histogram-bar::before { content: attr(data-tally-label); position: absolute; bottom: calc(100% + 3px); left: 50%; color: var(--ink); font: 700 11px/1 Arial, sans-serif; transform: translateX(-50%); }
+.clue-histogram-bar::after { content: attr(data-clues); position: absolute; top: calc(100% + 6px); left: 50%; color: var(--ink); font: 700 10px/1 Arial, sans-serif; transform: translateX(-50%); }
 .clue-histogram-bar.qualifying-bar { background: var(--coral); }
 .custom-build-grid, .custom-result-grid { width: min(100%, 740px); }
 .custom-build-grid { margin: 18px 0; }
