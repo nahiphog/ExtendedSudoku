@@ -116,7 +116,8 @@ const createTechniqueTable = (moves) => {
   [...new Set(moves.map((move) => move.technique))].forEach((technique) => {
     const row = document.createElement('tr');
     const name = document.createElement('td'); name.textContent = technique;
-    const steps = document.createElement('td'); steps.textContent = String(moves.filter((move) => move.technique === technique).length);
+    const steps = document.createElement('td'); steps.className = 'step-list';
+    steps.textContent = moves.map((move, index) => ({ move, number: index + 2 })).filter(({ move }) => move.technique === technique).map(({ number }) => number).join(', ');
     row.append(name, steps); body.append(row);
   });
   table.append(head, body); section.append(heading, table); return section;
@@ -128,9 +129,11 @@ const createWalkthrough = (givens, moves) => {
   const heading = document.createElement('h2'); heading.textContent = 'Solution walkthrough';
   const rating = document.createElement('p'); rating.textContent = `Difficulty rating: ${moves.reduce((total, move) => total + (techniqueWeights[move.technique] ?? 0), 0)}`;
   const controls = document.createElement('div'); controls.className = 'step-controls';
+  const first = document.createElement('button'); first.type = 'button'; first.textContent = '<<'; first.title = 'Go to step 0';
   const previous = document.createElement('button'); previous.type = 'button'; previous.textContent = '‹'; previous.title = 'Previous step';
   const select = document.createElement('select');
   const next = document.createElement('button'); next.type = 'button'; next.textContent = '›'; next.title = 'Next step';
+  const last = document.createElement('button'); last.type = 'button'; last.textContent = '>>'; last.title = 'Go to last step';
   const label = document.createElement('p'); label.className = 'solve-step-label';
   const board = document.createElement('div'); board.className = 'final-grid-shell';
   const lastStep = moves.length + 1;
@@ -144,12 +147,17 @@ const createWalkthrough = (givens, moves) => {
       if (activeMove.cell !== undefined) applyMove(values, candidates, activeMove);
       else eliminated = new Set((activeMove.eliminations ?? []).map(({ cell, digit }) => `${cell}:${digit}`));
     }
-    board.replaceChildren(createBoard(values, givens, currentStep > 0 ? candidates : undefined, eliminated));
-    previous.disabled = currentStep === 0; next.disabled = currentStep === lastStep; select.value = String(currentStep);
+    const renderedBoard = createBoard(values, givens, currentStep > 0 ? candidates : undefined, eliminated);
+    const highlightedCells = new Set();
+    if (activeMove?.cell !== undefined) highlightedCells.add(activeMove.cell);
+    activeMove?.eliminations?.forEach(({ cell }) => highlightedCells.add(cell));
+    highlightedCells.forEach((cell) => renderedBoard.children[cell]?.classList.add('step-highlight'));
+    board.replaceChildren(renderedBoard);
+    first.disabled = currentStep === 0; previous.disabled = currentStep === 0; next.disabled = currentStep === lastStep; last.disabled = currentStep === lastStep; select.value = String(currentStep);
     label.textContent = currentStep === 0 ? 'Original custom-built puzzle.' : currentStep === 1 ? 'Snyder notation has been added.' : activeMove?.explanation ?? '';
   };
-  previous.onclick = () => { currentStep -= 1; render(); }; next.onclick = () => { currentStep += 1; render(); }; select.onchange = () => { currentStep = Number(select.value); render(); };
-  controls.append(previous, select, next); info.append(heading, rating, createTechniqueTable(moves), controls, label); section.append(board, info); render(); return section;
+  first.onclick = () => { currentStep = 0; render(); }; previous.onclick = () => { currentStep -= 1; render(); }; next.onclick = () => { currentStep += 1; render(); }; last.onclick = () => { currentStep = lastStep; render(); }; select.onchange = () => { currentStep = Number(select.value); render(); };
+  controls.append(first, previous, select, next, last); info.append(heading, rating, createTechniqueTable(moves), controls, label); section.append(board, info); render(); return section;
 };
 
 const setRunning = (running) => {
