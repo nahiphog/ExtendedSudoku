@@ -22,6 +22,8 @@
 
   aboutButton.addEventListener('click', () => dialog.showModal());
   const siteTitle = document.querySelector('.site-title');
+  const siteNav = document.querySelector('.site-nav');
+  if (siteTitle && siteNav) siteTitle.prepend(siteNav);
   (siteTitle ?? document.body).append(aboutButton);
   document.body.append(dialog);
 })();
