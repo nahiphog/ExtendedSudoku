@@ -80,7 +80,7 @@ const buildTechniqueTable = (moves) => {
     ['Technique', 'Steps'].forEach((label) => { const cell = document.createElement('th'); cell.textContent = label; header.append(cell); });
     const byTechnique = new Map();
     moves.forEach((move, index) => { const steps = byTechnique.get(move.technique) ?? []; steps.push(index + 2); byTechnique.set(move.technique, steps); });
-    byTechnique.forEach((steps, technique) => {
+    [...byTechnique.entries()].sort(([left], [right]) => techniqueWeights[left] - techniqueWeights[right] || left.localeCompare(right)).forEach(([technique, steps]) => {
         const row = table.insertRow();
         row.insertCell().textContent = technique;
         const stepsCell = row.insertCell();

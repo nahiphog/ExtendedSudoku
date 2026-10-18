@@ -178,7 +178,7 @@ const createTechniqueTable = (moves) => {
     const head = document.createElement('thead');
     head.innerHTML = '<tr><th scope="col">Technique</th><th scope="col">Steps</th></tr>';
     const body = document.createElement('tbody');
-    [...new Set(moves.map((move) => move.technique))].forEach((technique) => {
+    [...new Set(moves.map((move) => move.technique))].sort((left, right) => (techniqueWeights[left] ?? Infinity) - (techniqueWeights[right] ?? Infinity) || left.localeCompare(right)).forEach((technique) => {
         const row = document.createElement('tr');
         const name = document.createElement('td');
         name.textContent = technique;
