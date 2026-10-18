@@ -228,7 +228,11 @@ button.addEventListener('click', () => {
     : 'This puzzle has a unique solution using the supported logical techniques.';
   const card = document.createElement('div'); card.className = 'validator-card';
   const heading = document.createElement('h2'); heading.textContent = 'Unique solution';
-  card.append(heading, createGridCopyActions(solved.solution, 'completed grid'));
+  card.append(
+    heading,
+    createGridCopyActions(givens, 'final grid'),
+    createGridCopyActions(solved.solution, 'completed grid'),
+  );
   if (!solved.walkthroughValid && solved.solution) {
     const solutionHeading = document.createElement('h3'); solutionHeading.textContent = 'Solved grid';
     card.append(solutionHeading, createBoard(solved.solution, givens));

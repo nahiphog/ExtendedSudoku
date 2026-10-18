@@ -74,8 +74,11 @@ for (const pagePath of ['dist/simulation.html', 'dist/simulation-difficulty.html
 }
 const validatorPage = read('dist/validator.html');
 assert(validatorPage.includes('class="actions validator-actions"'), 'Verify controls must share one action row');
-assert(read('dist/validator.js').includes("createGridCopyActions(solved.solution, 'completed grid')") && read('dist/validator.js').includes('copyGridImage'),
-  'Verify results must support string and image copying for a completed grid');
+const validatorScript = read('dist/validator.js');
+assert(validatorScript.includes("createGridCopyActions(givens, 'final grid')") && validatorScript.includes("createGridCopyActions(solved.solution, 'completed grid')") && validatorScript.includes('copyGridImage'),
+  'Verify results must support final-grid and completed-grid string and image copying');
+assert(validatorScript.indexOf("createGridCopyActions(givens, 'final grid')") < validatorScript.indexOf("createGridCopyActions(solved.solution, 'completed grid')"),
+  'Verify final-grid copy controls must precede completed-grid copy controls');
 const techniquesPage = read('dist/techniques.html');
 assert(techniquesPage.includes('<td>Empty Rectangle</td><td>120</td><td>Active</td>'), 'technique ratings must show Empty Rectangle as active with SudokUI difficulty 120');
 assert(techniquesPage.includes('<td>Naked Triple</td><td>80</td><td>Active</td>'), 'technique ratings must show Naked Triple as active with SudokUI difficulty 80');
