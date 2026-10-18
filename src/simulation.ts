@@ -32,7 +32,7 @@ function updateHistogram(frequencies, clueLimit) {
     if (!frequency) continue;
     const bar = document.createElement('div');
     bar.className = `clue-histogram-bar${count <= clueLimit ? ' qualifying-bar' : ''}`;
-    bar.dataset.clues = String(count); bar.style.height = `${Math.max(6, (frequency / maximum) * 100)}%`;
+    bar.dataset.clues = String(count); bar.dataset.tallyLabel = frequency === 1 ? '1' : ''; bar.style.height = `${Math.max(6, (frequency / maximum) * 100)}%`;
     bar.title = `${count} given cells: ${frequency} trial${frequency === 1 ? '' : 's'}`;
     histogram.append(bar);
   }
