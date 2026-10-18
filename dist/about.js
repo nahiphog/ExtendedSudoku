@@ -3,6 +3,9 @@
   aboutButton.id = 'about-button';
   aboutButton.type = 'button';
   aboutButton.textContent = 'About';
+  Object.assign(aboutButton.style, {
+    position: 'fixed', top: '10px', right: '18px', left: 'auto', transform: 'none', zIndex: '20',
+  });
   aboutButton.setAttribute('aria-haspopup', 'dialog');
 
   const dialog = document.createElement('dialog');

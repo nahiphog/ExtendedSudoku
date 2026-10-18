@@ -37,6 +37,7 @@ const aboutScript = read('dist/about.js');
 assert(aboutScript.includes("aboutButton.textContent = 'About'") && aboutScript.includes('Rows and columns continue across the empty spaces.'), 'the About dialog must provide the refined rules');
 assert(aboutScript.includes("document.querySelector('.site-title')") && aboutScript.includes('siteTitle ?? document.body'), 'the About button must be placed inside the header');
 assert(aboutScript.includes("document.querySelector('.site-nav')") && aboutScript.includes('siteTitle.prepend(siteNav)'), 'the navigation menu must be placed inside the header');
+assert(aboutScript.includes("position: 'fixed'") && aboutScript.includes("right: '18px'"), 'the About button must be pinned to the header’s right edge');
 const styles = read('dist/styles.css');
 assert(styles.includes('inset: 0 0 auto 0; width: auto; max-width: none') && styles.includes('position: absolute; top: 50%; left: 20px'), 'the header must span the viewport with navigation on its left');
 const generatePage = read('dist/index.html');
