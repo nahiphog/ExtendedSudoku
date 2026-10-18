@@ -131,6 +131,16 @@ h2, h3 { color: #394080; }
 .validator-actions .generate { width: auto; margin: 0; padding: 10px; box-shadow: none; }
 .solution-copy-actions { width: fit-content; margin: 14px 0 0; }
 #simulation-toggle { display: inline-block; width: fit-content; padding-inline: 20px; }
+.custom-build-grid { width: min(100%, 740px); margin: 18px 0; }
+.custom-build-grid .cell.selected { background: #9de39b; box-shadow: inset 0 0 0 2px #287a38; }
+.custom-build-grid.is-building .cell:not(.grey) { cursor: progress; }
+.custom-build-actions { width: min(100%, 420px); }
+.custom-build-actions .generate { width: auto; margin: 0; padding: 10px; }
+.custom-build-actions #halt-build { padding: 10px; border: 0; border-radius: 12px; color: #fff; background: #d64d63; font: 700 14px/1 inherit; cursor: pointer; }
+.custom-build-actions #halt-build:disabled { opacity: .5; cursor: default; }
+.custom-result { grid-column: 1 / -1; margin-top: 22px; }
+.custom-result-grid { width: min(100%, 740px); }
+.custom-walkthrough { margin-top: 24px; }
 .about-button { position: absolute; top: 50%; right: 10px; z-index: 1; padding: 8px 10px; border: 0; border-radius: 999px; color: var(--ink); background: #fff; box-shadow: 0 3px 10px #1d24501c; font: 700 12px/1 "Trebuchet MS", Arial, sans-serif; cursor: pointer; pointer-events: auto; transform: translateY(-50%); }
 .about-button:hover, .about-button:focus-visible { color: #fff; background: var(--indigo); outline: 0; }
 .about-dialog { width: min(92vw, 430px); padding: 26px; border: 0; border-radius: 18px; color: var(--ink); background: #fffdf8; box-shadow: 0 24px 70px #20223d66; }

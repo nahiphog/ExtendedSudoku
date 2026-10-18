@@ -9,6 +9,7 @@ const read = (path) => readFileSync(resolve(root, path), 'utf8');
 
 const pages = [
   ['dist/index.html', 'app.js'],
+  ['dist/custom-build.html', 'custom-build.js'],
   ['dist/validator.html', 'validator.js'],
   ['dist/simulation.html', 'simulation.js'],
   ['dist/simulation-difficulty.html', 'simulation-difficulty.js'],
@@ -28,7 +29,7 @@ for (const [pagePath, scriptName] of pages) {
 
 assert(existsSync(resolve(root, 'dist/favicon.png')), 'the shared browser-tab icon must be present');
 assert(existsSync(resolve(root, 'dist/about.js')), 'the shared About dialog script must be present');
-for (const pagePath of ['dist/index.html', 'dist/techniques.html', 'dist/validator.html', 'dist/simulation.html', 'dist/simulation-difficulty.html']) {
+for (const pagePath of ['dist/index.html', 'dist/custom-build.html', 'dist/techniques.html', 'dist/validator.html', 'dist/simulation.html', 'dist/simulation-difficulty.html']) {
   assert(read(pagePath).includes('rel="icon" href="./favicon.png"'), `${pagePath} must load the shared browser-tab icon`);
   assert(read(pagePath).includes('src="./about.js"'), `${pagePath} must load the shared About dialog`);
 }
@@ -58,11 +59,16 @@ for (const rating of ['300', '400', '500', '600', '700', '800', '1000', '1500'])
 for (const [value, label] of [['500', '500'], ['10000', '10,000'], ['20000', '20,000'], ['100000', '100,000']]) {
   assert(new RegExp(`<option(?: value="${value}")?(?: selected)?>${label}</option>`).test(difficultyPage), `difficulty simulation must offer upper limit ${label}`);
 }
-for (const pagePath of ['dist/index.html', 'dist/techniques.html', 'dist/validator.html', 'dist/simulation.html', 'dist/simulation-difficulty.html']) {
+for (const pagePath of ['dist/index.html', 'dist/custom-build.html', 'dist/techniques.html', 'dist/validator.html', 'dist/simulation.html', 'dist/simulation-difficulty.html']) {
   const page = read(pagePath);
   assert(page.includes('simulation-difficulty.html'), `${pagePath} must link to Simulation difficulty`);
+  assert(page.includes('custom-build.html'), `${pagePath} must link to Custom Build`);
   assert((page.match(/Extended Sudoku Maker/g) ?? []).length === 1, `${pagePath} must show the site title only in its header`);
 }
+const customBuildPage = read('dist/custom-build.html');
+assert(customBuildPage.includes('id="custom-grid"') && customBuildPage.includes('id="build-now"') && customBuildPage.includes('id="halt-build"'), 'Custom Build must provide the selectable grid and build controls');
+const customBuildScript = read('dist/custom-build.js');
+assert(customBuildScript.includes('findSolutions(finalGrid, 2)') && customBuildScript.includes("createCopyActions(finalGrid, 'final grid')") && customBuildScript.includes("createCopyActions(solved.solution, 'completed grid')"), 'Custom Build must search for unique puzzles and expose all copy controls');
 for (const pagePath of ['dist/simulation.html', 'dist/simulation-difficulty.html']) {
   const page = read(pagePath);
   assert(page.includes('id="simulation-toggle"'), `${pagePath} must provide a single simulation toggle`);
