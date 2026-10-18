@@ -57,7 +57,7 @@ h2 { margin: 22px 0 10px; font-size: 1rem; }
 .validator-card { min-width: 0; padding: 16px; border: 2px solid #000; background: #fff; }
 .validator-card:only-child { grid-column: 1 / -1; }
 .validator-card > h2 { margin-top: 0; }
-.validator-card .walkthrough-board { width: 100%; min-width: 460px; }
+.validator-card .walkthrough-board { width: 100%; min-width: 0; }
 .validator-card .final-grid-shell { min-width: 0; }
 .validator-card .final-workspace { grid-template-columns: minmax(0, 740px) minmax(280px, 1fr); }
 .validator-card .final-grid { width: 100%; }
@@ -68,7 +68,7 @@ h2 { margin: 22px 0 10px; font-size: 1rem; }
 .statistics { margin-top: 16px; padding: 16px; border: 2px solid #000; }
 .final-workspace { display: grid; grid-template-columns: 740px minmax(280px, 1fr); gap: 18px; align-items: start; }
 .final-grid-shell { overflow-x: auto; }
-.walkthrough-board { width: 740px; }
+.walkthrough-board { width: min(100%, 740px); }
 .final-workspace .statistics { margin-top: 0; }
 .statistics h3 { margin: 0 0 10px; font-size: 1rem; }
 .statistics h3:not(:first-child) { margin-top: 22px; }
@@ -139,7 +139,7 @@ h2, h3 { color: #394080; }
 .simulation-histogram { margin: 22px 0; }
 .simulation-histogram h2 { margin-bottom: 8px; }
 .clue-histogram { display: flex; align-items: flex-end; gap: 2px; height: 190px; padding: 12px 6px 0; border-bottom: 2px solid var(--ink); overflow-x: auto; background: #f7f6ff; }
-.clue-histogram-bar { flex: 0 0 7px; min-height: 2px; background: var(--teal); border-radius: 3px 3px 0 0; }
+.clue-histogram-bar { flex: 0 0 21px; min-height: 2px; background: var(--teal); border-radius: 3px 3px 0 0; }
 .clue-histogram-bar.qualifying-bar { background: var(--coral); }
 .custom-build-grid, .custom-result-grid { width: min(100%, 740px); }
 .custom-build-grid { margin: 18px 0; }
@@ -168,6 +168,6 @@ h2, h3 { color: #394080; }
 .about-dialog p { margin: 0 0 20px; line-height: 1.55; }
 .about-dialog button { float: right; padding: 9px 15px; border: 0; border-radius: 9px; color: #fff; background: var(--indigo); font: 700 14px/1 "Trebuchet MS", Arial, sans-serif; cursor: pointer; }
 .about-dialog button:hover, .about-dialog button:focus-visible { background: var(--coral); outline: 0; }
-@media (max-width: 900px) { .custom-walkthrough { grid-template-columns: 1fr; } }
+@media (max-width: 900px) { .custom-walkthrough { grid-template-columns: 1fr; } .custom-walkthrough-info { grid-row: 2; } }
 @media (max-width: 720px) { body { padding: 66px 10px 28px; } .site-title { padding: 0 72px; } .site-nav { left: 10px; } .site-nav select { max-width: 110px; } .about-button { top: 9px; right: 10px; } .layout { padding: 18px; border-radius: 18px; } }
 @media (max-width: 540px) { .validator-actions { grid-template-columns: 1fr; } }

@@ -21,22 +21,20 @@ const stringify = (values) => values.map((value) => value || '.').join('');
 const clueCount = (values) => ACTIVE_CELLS.filter((cell) => values[cell]).length;
 function createHistogram(clueLimit) {
     histogram.replaceChildren();
-    for (let count = 1; count <= 108; count += 1) {
-        const bar = document.createElement('div');
-        bar.className = `clue-histogram-bar${count <= clueLimit ? ' qualifying-bar' : ''}`;
-        bar.dataset.clues = String(count);
-        bar.title = `${count} given cells: 0 trials`;
-        histogram.append(bar);
-    }
 }
 function updateHistogram(frequencies, clueLimit) {
     const maximum = Math.max(1, ...frequencies);
+    histogram.replaceChildren();
     for (let count = 1; count <= 108; count += 1) {
-        const bar = histogram.children[count - 1];
         const frequency = frequencies[count];
-        bar.style.height = frequency ? `${Math.max(6, (frequency / maximum) * 100)}%` : '0';
+        if (!frequency)
+            continue;
+        const bar = document.createElement('div');
+        bar.className = `clue-histogram-bar${count <= clueLimit ? ' qualifying-bar' : ''}`;
+        bar.dataset.clues = String(count);
+        bar.style.height = `${Math.max(6, (frequency / maximum) * 100)}%`;
         bar.title = `${count} given cells: ${frequency} trial${frequency === 1 ? '' : 's'}`;
-        bar.classList.toggle('qualifying-bar', count <= clueLimit);
+        histogram.append(bar);
     }
 }
 function copyButton(text) {
