@@ -32,7 +32,7 @@ function updateHistogram(frequencies, clueLimit) {
     if (!frequency) continue;
     const bar = document.createElement('div');
     bar.className = `clue-histogram-bar${count <= clueLimit ? ' qualifying-bar' : ''}`;
-    bar.dataset.clues = String(count); bar.dataset.tallyLabel = frequency === 1 ? '1' : ''; bar.style.height = `${Math.max(6, (frequency / maximum) * 100)}%`;
+    bar.dataset.clues = String(count); bar.dataset.tallyLabel = String(frequency); bar.style.height = `${Math.max(6, (frequency / maximum) * 100)}%`;
     bar.title = `${count} given cells: ${frequency} trial${frequency === 1 ? '' : 's'}`;
     histogram.append(bar);
   }
@@ -105,7 +105,7 @@ const startSimulation = () => {
     elapsed += performance.now() - startedAt;
     done += 1;
     const latestClueCount = clueCount(latest); frequencies[latestClueCount] += 1;
-    if (done <= 100 || done % 100 === 0 || latestClueCount <= clueLimit) updateHistogram(frequencies, clueLimit);
+    updateHistogram(frequencies, clueLimit);
     const qualifyingCountBefore = qualifying.length;
     if (latestClueCount <= clueLimit && qualifying.length < 2) qualifying.push(latest);
     simStatus.textContent = `${done}/${total} trials · average ${(elapsed / done).toFixed(1)} ms · ${qualifying.length} qualifying result(s) · shared single-cell digging`;
