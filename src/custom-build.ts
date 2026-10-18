@@ -17,7 +17,7 @@ const techniqueWeights = {
   'Empty Rectangle': 120, 'Swordfish': 150, 'Jellyfish': 160, 'XY-Wing': 160, 'XYZ-Wing': 180, 'W-Wing': 150, 'Brute force': 10000,
 };
 
-const updateSelectionCount = () => { selectedCount.textContent = `${selected.size} of 108 cells selected`; };
+const updateSelectionCount = () => { selectedCount.textContent = `${selected.size} cells selected.`; };
 
 for (let cell = 0; cell < 144; cell += 1) {
   const row = Math.floor(cell / 12); const column = cell % 12;
@@ -107,6 +107,7 @@ const createCopyActions = (values, label) => {
 
 const createWalkthrough = (givens, moves) => {
   const section = document.createElement('section'); section.className = 'custom-walkthrough';
+  const info = document.createElement('div'); info.className = 'custom-walkthrough-info';
   const heading = document.createElement('h2'); heading.textContent = 'Solution walkthrough';
   const rating = document.createElement('p'); rating.textContent = `Difficulty rating: ${moves.reduce((total, move) => total + (techniqueWeights[move.technique] ?? 0), 0)}`;
   const controls = document.createElement('div'); controls.className = 'step-controls';
@@ -131,7 +132,7 @@ const createWalkthrough = (givens, moves) => {
     label.textContent = currentStep === 0 ? 'Original custom-built puzzle.' : currentStep === 1 ? 'Snyder notation has been added.' : activeMove?.explanation ?? '';
   };
   previous.onclick = () => { currentStep -= 1; render(); }; next.onclick = () => { currentStep += 1; render(); }; select.onchange = () => { currentStep = Number(select.value); render(); };
-  controls.append(previous, select, next); section.append(heading, rating, controls, label, board); render(); return section;
+  controls.append(previous, select, next); info.append(heading, rating, controls, label); section.append(board, info); render(); return section;
 };
 
 const setRunning = (running) => { isRunning = running; buildButton.disabled = running; haltButton.disabled = !running; selectionGrid.classList.toggle('is-building', running); };

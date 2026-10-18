@@ -71,9 +71,11 @@ for (const pagePath of ['dist/index.html', 'dist/custom-build.html', 'dist/techn
 }
 const customBuildPage = read('dist/custom-build.html');
 assert(customBuildPage.includes('id="custom-grid"') && customBuildPage.includes('id="build-now"') && customBuildPage.includes('id="halt-build"'), 'Custom Build must provide the selectable grid and build controls');
+assert(!customBuildPage.includes('<h1>Custom Build</h1>') && customBuildPage.indexOf('id="selected-count"') < customBuildPage.indexOf('id="custom-grid"'), 'Custom Build must show the selection count above its grid without a redundant page title');
 const customBuildScript = read('dist/custom-build.js');
 assert(customBuildScript.includes('findSolutions(finalGrid, 2)') && customBuildScript.includes("createCopyActions(finalGrid, 'final grid')") && customBuildScript.includes("createCopyActions(solved.solution, 'completed grid')"), 'Custom Build must search for unique puzzles and expose all copy controls');
 assert(!customBuildScript.includes("finalHeading.textContent = 'Final grid'") && customBuildScript.includes('createWalkthrough(finalGrid, solved.moves)'), 'Custom Build must show only the walkthrough grid instead of a duplicate final grid');
+assert(customBuildScript.includes('cells selected.') && customBuildScript.includes("info.className = 'custom-walkthrough-info'") && customBuildScript.includes('section.append(board, info)'), 'Custom Build must use the requested selection wording and a right-side walkthrough panel');
 for (const pagePath of ['dist/simulation.html', 'dist/simulation-difficulty.html']) {
   const page = read(pagePath);
   assert(page.includes('id="simulation-toggle"'), `${pagePath} must provide a single simulation toggle`);

@@ -15,7 +15,7 @@ const techniqueWeights = {
     'Naked Pair': 60, 'Naked Triple': 80, 'Hidden Pair': 70, 'Hidden Triple': 100, 'Naked Quad': 120, 'Hidden Quad': 150,
     'Empty Rectangle': 120, 'Swordfish': 150, 'Jellyfish': 160, 'XY-Wing': 160, 'XYZ-Wing': 180, 'W-Wing': 150, 'Brute force': 10000,
 };
-const updateSelectionCount = () => { selectedCount.textContent = `${selected.size} of 108 cells selected`; };
+const updateSelectionCount = () => { selectedCount.textContent = `${selected.size} cells selected.`; };
 for (let cell = 0; cell < 144; cell += 1) {
     const row = Math.floor(cell / 12);
     const column = cell % 12;
@@ -169,6 +169,8 @@ const createCopyActions = (values, label) => {
 const createWalkthrough = (givens, moves) => {
     const section = document.createElement('section');
     section.className = 'custom-walkthrough';
+    const info = document.createElement('div');
+    info.className = 'custom-walkthrough-info';
     const heading = document.createElement('h2');
     heading.textContent = 'Solution walkthrough';
     const rating = document.createElement('p');
@@ -216,7 +218,8 @@ const createWalkthrough = (givens, moves) => {
     next.onclick = () => { currentStep += 1; render(); };
     select.onchange = () => { currentStep = Number(select.value); render(); };
     controls.append(previous, select, next);
-    section.append(heading, rating, controls, label, board);
+    info.append(heading, rating, controls, label);
+    section.append(board, info);
     render();
     return section;
 };
