@@ -96,7 +96,7 @@ for (const pagePath of ['dist/simulation.html', 'dist/simulation-difficulty.html
 const simulationPage = read('dist/simulation.html');
 assert(simulationPage.includes('id="clue-histogram"') && simulationPage.includes('<option value="1000000" selected>1,000,000</option>'), 'Simulation must expose a live clue histogram and default to one million trials');
 const simulationSource = read('src/simulation.ts');
-assert(simulationSource.includes('count === 26') && simulationSource.includes('frequencies[latestClueCount] += 1') && simulationSource.includes("'qualifying-bar'"), 'Simulation must default to 26 clues and highlight qualifying histogram bars');
+assert(simulationSource.includes('count === 26') && simulationSource.includes('frequencies[latestClueCount] += 1') && simulationSource.includes("'qualifying-bar'") && simulationSource.includes("frequency ? `${Math.max(6, (frequency / maximum) * 100)}%` : '0'"), 'Simulation must default to 26 clues and visibly highlight qualifying histogram bars');
 const validatorPage = read('dist/validator.html');
 assert(validatorPage.includes('class="actions validator-actions"'), 'Verify controls must share one action row');
 const validatorScript = read('dist/validator.js');
