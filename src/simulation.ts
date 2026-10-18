@@ -5,7 +5,8 @@ const limit = document.querySelector('#limit');
 const toggle = document.querySelector('#simulation-toggle');
 const simStatus = document.querySelector('#sim-status');
 const selected = document.querySelector('#selected');
-for (let count = 1; count <= 108; count += 1) limit.add(new Option(count, count, count === 30, count === 30));
+const histogram = document.querySelector('#clue-histogram');
+for (let count = 1; count <= 108; count += 1) limit.add(new Option(count, count, count === 26, count === 26));
 let halted = false;
 let running = false;
 let runId = 0;
@@ -18,6 +19,26 @@ const setRunning = (value) => {
 
 const stringify = (values) => values.map((value) => value || '.').join('');
 const clueCount = (values) => ACTIVE_CELLS.filter((cell) => values[cell]).length;
+
+function createHistogram(clueLimit) {
+  histogram.replaceChildren();
+  for (let count = 1; count <= 108; count += 1) {
+    const bar = document.createElement('div');
+    bar.className = `clue-histogram-bar${count <= clueLimit ? ' qualifying-bar' : ''}`;
+    bar.dataset.clues = String(count); bar.title = `${count} given cells: 0 trials`;
+    histogram.append(bar);
+  }
+}
+
+function updateHistogram(frequencies, clueLimit) {
+  const maximum = Math.max(1, ...frequencies);
+  for (let count = 1; count <= 108; count += 1) {
+    const bar = histogram.children[count - 1]; const frequency = frequencies[count];
+    bar.style.height = `${Math.max(2, (frequency / maximum) * 100)}%`;
+    bar.title = `${count} given cells: ${frequency} trial${frequency === 1 ? '' : 's'}`;
+    bar.classList.toggle('qualifying-bar', count <= clueLimit);
+  }
+}
 
 function copyButton(text) {
   const button = document.createElement('button');
@@ -68,6 +89,8 @@ const startSimulation = () => {
   let elapsed = 0;
   let latest = null;
   const qualifying = [];
+  const frequencies = Array(109).fill(0);
+  createHistogram(clueLimit);
   const tick = () => {
     if (thisRun !== runId) return;
     if (halted || done >= total) {
@@ -83,12 +106,14 @@ const startSimulation = () => {
     latest = digSingleCell(generateCompletedGrid());
     elapsed += performance.now() - startedAt;
     done += 1;
+    const latestClueCount = clueCount(latest); frequencies[latestClueCount] += 1;
+    if (done <= 100 || done % 100 === 0 || latestClueCount <= clueLimit) updateHistogram(frequencies, clueLimit);
     const qualifyingCountBefore = qualifying.length;
-    if (clueCount(latest) <= clueLimit && qualifying.length < 2) qualifying.push(latest);
+    if (latestClueCount <= clueLimit && qualifying.length < 2) qualifying.push(latest);
     simStatus.textContent = `${done}/${total} trials · average ${(elapsed / done).toFixed(1)} ms · ${qualifying.length} qualifying result(s) · shared single-cell digging`;
     if (qualifying.length > qualifyingCountBefore) show(qualifying, latest, clueLimit);
     if (done < total && !halted) setTimeout(tick, 0);
-    else show(qualifying, halted ? null : latest, clueLimit);
+    else { updateHistogram(frequencies, clueLimit); show(qualifying, halted ? null : latest, clueLimit); }
   };
   tick();
 };
