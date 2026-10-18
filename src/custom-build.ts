@@ -6,6 +6,7 @@ const selectedCount = document.querySelector('#selected-count');
 const buildButton = document.querySelector('#build-toggle');
 const minimumDifficulty = document.querySelector('#minimum-difficulty');
 const maximumDifficulty = document.querySelector('#maximum-difficulty');
+const attemptCounter = document.querySelector('#build-attempts');
 const buildStatus = document.querySelector('#build-status');
 const results = document.querySelector('#build-results');
 const selected = new Set();
@@ -163,11 +164,11 @@ buildButton.addEventListener('click', async () => {
   if (!selected.size) { buildStatus.textContent = 'Select at least one cell before building a puzzle.'; return; }
   const minimum = Number(minimumDifficulty.value); const maximum = Number(maximumDifficulty.value);
   if (minimum > maximum) { buildStatus.textContent = 'Choose a minimum difficulty that does not exceed the maximum.'; return; }
-  shouldHalt = false; setRunning(true); results.replaceChildren(); let attempts = 0; const startedAt = performance.now();
+  shouldHalt = false; setRunning(true); results.replaceChildren(); let attempts = 0; const startedAt = performance.now(); attemptCounter.textContent = 'Attempt: 0';
   buildStatus.textContent = 'Building puzzle — attempt 0…';
   await nextFrame();
   while (!shouldHalt) {
-    attempts += 1;
+    attempts += 1; attemptCounter.textContent = `Attempt: ${attempts}`;
     const completed = generateCompletedGrid(); const finalGrid = Array(144).fill(0);
     selected.forEach((cell) => { finalGrid[cell] = completed[cell]; });
     const found = findSolutions(finalGrid, 2);

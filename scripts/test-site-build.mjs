@@ -73,6 +73,7 @@ for (const pagePath of ['dist/index.html', 'dist/custom-build.html', 'dist/techn
 const customBuildPage = read('dist/custom-build.html');
 assert(customBuildPage.includes('id="custom-grid"') && customBuildPage.includes('id="build-toggle"') && !customBuildPage.includes('id="halt-build"'), 'Custom Build must provide one toggle for the selectable grid and build controls');
 assert(customBuildPage.includes('id="minimum-difficulty"') && customBuildPage.includes('<option value="0" selected>0</option>') && customBuildPage.includes('id="maximum-difficulty"') && customBuildPage.includes('<option value="2000" selected>2000</option>'), 'Custom Build must provide its requested difficulty range controls');
+assert(customBuildPage.includes('id="build-attempts"'), 'Custom Build must provide a dedicated live attempt counter');
 assert(!customBuildPage.includes('<h1>Custom Build</h1>') && customBuildPage.indexOf('id="selected-count"') < customBuildPage.indexOf('id="custom-grid"'), 'Custom Build must show the selection count above its grid without a redundant page title');
 const customBuildScript = read('dist/custom-build.js');
 assert(customBuildScript.includes('findSolutions(finalGrid, 2)') && customBuildScript.includes("createCopyActions(finalGrid, 'final grid')") && customBuildScript.includes("createCopyActions(solved.solution, 'completed grid')"), 'Custom Build must search for unique puzzles and expose all copy controls');
@@ -81,6 +82,7 @@ assert(customBuildScript.includes('cells selected.') && customBuildScript.includ
 assert(customBuildScript.includes("heading.textContent = 'Techniques used'") && customBuildScript.includes('createTechniqueTable(moves)') && styles.includes('.custom-technique-summary'), 'Custom Build must show its technique table beside the walkthrough grid');
 assert(customBuildScript.includes("running ? 'Halt' : 'Build now'") && customBuildScript.includes('const startedAt = performance.now()') && customBuildScript.includes('${elapsed}s'), 'Custom Build must provide a build/halt toggle and show elapsed build time');
 assert(customBuildScript.includes('difficultyRating < minimum || difficultyRating > maximum') && customBuildScript.includes('latest rating ${difficultyRating} is outside ${minimum}–${maximum}'), 'Custom Build must enforce the selected difficulty range');
+assert(customBuildScript.includes("attemptCounter.textContent = 'Attempt: 0'") && customBuildScript.includes('attemptCounter.textContent = `Attempt: ${attempts}`'), 'Custom Build must update the attempt counter in real time');
 for (const pagePath of ['dist/simulation.html', 'dist/simulation-difficulty.html']) {
   const page = read(pagePath);
   assert(page.includes('id="simulation-toggle"'), `${pagePath} must provide a single simulation toggle`);
