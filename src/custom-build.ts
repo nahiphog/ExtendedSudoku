@@ -3,8 +3,9 @@ const { ACTIVE_CELLS, isBlackCell, applyPlacement, buildCandidates, removeCandid
 
 const selectionGrid = document.querySelector('#custom-grid');
 const selectedCount = document.querySelector('#selected-count');
-const buildButton = document.querySelector('#build-now');
-const haltButton = document.querySelector('#halt-build');
+const buildButton = document.querySelector('#build-toggle');
+const minimumDifficulty = document.querySelector('#minimum-difficulty');
+const maximumDifficulty = document.querySelector('#maximum-difficulty');
 const buildStatus = document.querySelector('#build-status');
 const results = document.querySelector('#build-results');
 const selected = new Set();
@@ -105,6 +106,21 @@ const createCopyActions = (values, label) => {
   actions.append(stringButton, imageButton); return actions;
 };
 
+const createTechniqueTable = (moves) => {
+  const section = document.createElement('section'); section.className = 'custom-technique-summary';
+  const heading = document.createElement('h3'); heading.textContent = 'Techniques used';
+  const table = document.createElement('table'); table.className = 'technique-ratings';
+  const head = document.createElement('thead'); head.innerHTML = '<tr><th scope="col">Technique</th><th scope="col">Steps</th></tr>';
+  const body = document.createElement('tbody');
+  [...new Set(moves.map((move) => move.technique))].forEach((technique) => {
+    const row = document.createElement('tr');
+    const name = document.createElement('td'); name.textContent = technique;
+    const steps = document.createElement('td'); steps.textContent = String(moves.filter((move) => move.technique === technique).length);
+    row.append(name, steps); body.append(row);
+  });
+  table.append(head, body); section.append(heading, table); return section;
+};
+
 const createWalkthrough = (givens, moves) => {
   const section = document.createElement('section'); section.className = 'custom-walkthrough';
   const info = document.createElement('div'); info.className = 'custom-walkthrough-info';
@@ -132,15 +148,22 @@ const createWalkthrough = (givens, moves) => {
     label.textContent = currentStep === 0 ? 'Original custom-built puzzle.' : currentStep === 1 ? 'Snyder notation has been added.' : activeMove?.explanation ?? '';
   };
   previous.onclick = () => { currentStep -= 1; render(); }; next.onclick = () => { currentStep += 1; render(); }; select.onchange = () => { currentStep = Number(select.value); render(); };
-  controls.append(previous, select, next); info.append(heading, rating, controls, label); section.append(board, info); render(); return section;
+  controls.append(previous, select, next); info.append(heading, rating, createTechniqueTable(moves), controls, label); section.append(board, info); render(); return section;
 };
 
-const setRunning = (running) => { isRunning = running; buildButton.disabled = running; haltButton.disabled = !running; selectionGrid.classList.toggle('is-building', running); };
+const setRunning = (running) => {
+  isRunning = running; buildButton.disabled = false; buildButton.textContent = running ? 'Halt' : 'Build now';
+  buildButton.setAttribute('aria-pressed', String(running)); minimumDifficulty.disabled = running; maximumDifficulty.disabled = running;
+  selectionGrid.classList.toggle('is-building', running);
+};
 const nextFrame = () => new Promise((resolve) => requestAnimationFrame(resolve));
 
 buildButton.addEventListener('click', async () => {
+  if (isRunning) { shouldHalt = true; buildButton.disabled = true; buildStatus.textContent = 'Halting after the current attempt…'; return; }
   if (!selected.size) { buildStatus.textContent = 'Select at least one cell before building a puzzle.'; return; }
-  shouldHalt = false; setRunning(true); results.replaceChildren(); let attempts = 0;
+  const minimum = Number(minimumDifficulty.value); const maximum = Number(maximumDifficulty.value);
+  if (minimum > maximum) { buildStatus.textContent = 'Choose a minimum difficulty that does not exceed the maximum.'; return; }
+  shouldHalt = false; setRunning(true); results.replaceChildren(); let attempts = 0; const startedAt = performance.now();
   buildStatus.textContent = 'Building puzzle — attempt 0…';
   await nextFrame();
   while (!shouldHalt) {
@@ -150,15 +173,20 @@ buildButton.addEventListener('click', async () => {
     const found = findSolutions(finalGrid, 2);
     if (found.length === 1) {
       const solved = solveWithTechniques(finalGrid, true);
+      const difficultyRating = solved.moves.reduce((total, move) => total + (techniqueWeights[move.technique] ?? 0), 0);
+      if (difficultyRating < minimum || difficultyRating > maximum) {
+        buildStatus.textContent = `Building puzzle — ${attempts} attempt${attempts === 1 ? '' : 's'} made; latest rating ${difficultyRating} is outside ${minimum}–${maximum}.`;
+        await nextFrame(); continue;
+      }
       const card = document.createElement('section'); card.className = 'validator-card custom-result';
-      const heading = document.createElement('h2'); heading.textContent = `Custom puzzle built in ${attempts} attempt${attempts === 1 ? '' : 's'}`;
+      const elapsed = ((performance.now() - startedAt) / 1000).toFixed(2);
+      const heading = document.createElement('h2'); heading.textContent = `Custom puzzle built in ${attempts} attempt${attempts === 1 ? '' : 's'} · ${elapsed}s`;
       card.append(heading, createCopyActions(finalGrid, 'final grid'), createCopyActions(solved.solution, 'completed grid'), createWalkthrough(finalGrid, solved.moves));
-      results.append(card); buildStatus.textContent = `Built a unique puzzle in ${attempts} attempt${attempts === 1 ? '' : 's'}.`; setRunning(false); return;
+      results.append(card); buildStatus.textContent = `Built a unique puzzle in ${attempts} attempt${attempts === 1 ? '' : 's'} · ${elapsed}s.`; setRunning(false); return;
     }
     buildStatus.textContent = `Building puzzle — ${attempts} attempt${attempts === 1 ? '' : 's'} made…`;
     await nextFrame();
   }
-  buildStatus.textContent = `Build halted after ${attempts} attempt${attempts === 1 ? '' : 's'}.`; setRunning(false);
+  const elapsed = ((performance.now() - startedAt) / 1000).toFixed(2);
+  buildStatus.textContent = `Build halted after ${attempts} attempt${attempts === 1 ? '' : 's'} · ${elapsed}s.`; setRunning(false);
 });
-
-haltButton.addEventListener('click', () => { shouldHalt = true; haltButton.disabled = true; buildStatus.textContent = 'Halting after the current attempt…'; });

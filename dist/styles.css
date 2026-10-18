@@ -142,13 +142,18 @@ h2, h3 { color: #394080; }
 .custom-build-grid.is-building .cell:not(.grey) { cursor: progress; }
 .custom-build-actions { width: min(100%, 420px); }
 .custom-build-actions .generate { width: auto; margin: 0; padding: 10px; }
-.custom-build-actions #halt-build { padding: 10px; border: 0; border-radius: 12px; color: #fff; background: #d64d63; font: 700 14px/1 inherit; cursor: pointer; }
-.custom-build-actions #halt-build:disabled { opacity: .5; cursor: default; }
+.custom-build-actions #build-toggle[aria-pressed="true"] { background: linear-gradient(120deg, #d64d63, #e78150); }
+.custom-difficulty-range { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 14px 0; padding: 13px 15px; border-radius: 12px; background: var(--mist); color: #30376e; font-weight: 700; }
+.custom-difficulty-range select { padding: 6px 8px; border: 1px solid #b9c1e7; border-radius: 8px; color: var(--ink); background: #fff; font: inherit; }
 .custom-result { grid-column: 1 / -1; margin-top: 22px; }
 .custom-walkthrough { display: grid; grid-template-columns: minmax(0, 740px) minmax(260px, 1fr); gap: 24px; align-items: start; margin-top: 24px; }
 .custom-walkthrough .final-grid-shell { width: min(100%, 740px); }
 .custom-walkthrough-info { min-width: 0; }
 .custom-walkthrough-info > :first-child { margin-top: 0; }
+.custom-technique-summary { margin: 18px 0; }
+.custom-technique-summary h3 { margin: 0 0 8px; font-size: 1rem; }
+.custom-technique-summary .technique-ratings { margin: 0; }
+.custom-technique-summary .technique-ratings th, .custom-technique-summary .technique-ratings td { padding: 7px 8px; }
 .about-button { position: fixed !important; top: 10px; right: 18px; left: auto !important; z-index: 20; padding: 7px 10px; border: 0; border-radius: 999px; color: var(--ink); background: #fff; box-shadow: 0 3px 10px #1d24501c; font: 700 12px/1 "Trebuchet MS", Arial, sans-serif; cursor: pointer; pointer-events: auto; transform: none; }
 .about-button:hover, .about-button:focus-visible { color: #fff; background: var(--indigo); outline: 0; }
 .about-dialog { width: min(92vw, 430px); padding: 26px; border: 0; border-radius: 18px; color: var(--ink); background: #fffdf8; box-shadow: 0 24px 70px #20223d66; }
