@@ -151,8 +151,7 @@ buildButton.addEventListener('click', async () => {
       const solved = solveWithTechniques(finalGrid, true);
       const card = document.createElement('section'); card.className = 'validator-card custom-result';
       const heading = document.createElement('h2'); heading.textContent = `Custom puzzle built in ${attempts} attempt${attempts === 1 ? '' : 's'}`;
-      const finalHeading = document.createElement('h3'); finalHeading.textContent = 'Final grid';
-      card.append(heading, finalHeading, createBoard(finalGrid, finalGrid), createCopyActions(finalGrid, 'final grid'), createCopyActions(solved.solution, 'completed grid'), createWalkthrough(finalGrid, solved.moves));
+      card.append(heading, createCopyActions(finalGrid, 'final grid'), createCopyActions(solved.solution, 'completed grid'), createWalkthrough(finalGrid, solved.moves));
       results.append(card); buildStatus.textContent = `Built a unique puzzle in ${attempts} attempt${attempts === 1 ? '' : 's'}.`; setRunning(false); return;
     }
     buildStatus.textContent = `Building puzzle — ${attempts} attempt${attempts === 1 ? '' : 's'} made…`;

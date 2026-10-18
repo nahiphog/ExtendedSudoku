@@ -38,10 +38,10 @@ assert(aboutScript.includes("aboutButton.textContent = 'About'") && aboutScript.
 assert(aboutScript.includes("document.querySelector('.site-title')") && aboutScript.includes('siteTitle ?? document.body'), 'the About button must be placed inside the header');
 assert(aboutScript.includes("document.querySelector('.site-nav')") && aboutScript.includes('siteTitle.prepend(siteNav)'), 'the navigation menu must be placed inside the header');
 const styles = read('dist/styles.css');
-assert(styles.includes('left: 0; right: 0; width: 100vw') && styles.includes('position: absolute; top: 50%; left: 20px'), 'the header must span the viewport with navigation on its left');
+assert(styles.includes('inset: 0 0 auto 0; width: auto; max-width: none') && styles.includes('position: absolute; top: 50%; left: 20px'), 'the header must span the viewport with navigation on its left');
 const generatePage = read('dist/index.html');
 assert(!generatePage.includes('<h1>Generate a puzzle</h1>') && generatePage.includes('class="generate-controls"'), 'the Generate page must use compact inline controls without a redundant heading');
-assert(styles.includes('.generate-top { display: inline-block; width: auto;') && styles.includes('.difficulty-rating-value'), 'the Generate controls and rating need legible compact styling');
+assert(styles.includes('.generate-controls .generate-top { display: inline-flex; flex: 0 0 auto; inline-size: fit-content; width: fit-content !important;') && styles.includes('.difficulty-rating-value'), 'the Generate controls and rating need legible compact styling');
 
 const generatorSource = read('src/app.ts');
 assert(generatorSource.includes("classList.toggle('given-number', Boolean(puzzle[cell]))"), 'the completed grid must mark final-grid givens as black');
@@ -73,6 +73,7 @@ const customBuildPage = read('dist/custom-build.html');
 assert(customBuildPage.includes('id="custom-grid"') && customBuildPage.includes('id="build-now"') && customBuildPage.includes('id="halt-build"'), 'Custom Build must provide the selectable grid and build controls');
 const customBuildScript = read('dist/custom-build.js');
 assert(customBuildScript.includes('findSolutions(finalGrid, 2)') && customBuildScript.includes("createCopyActions(finalGrid, 'final grid')") && customBuildScript.includes("createCopyActions(solved.solution, 'completed grid')"), 'Custom Build must search for unique puzzles and expose all copy controls');
+assert(!customBuildScript.includes("finalHeading.textContent = 'Final grid'") && customBuildScript.includes('createWalkthrough(finalGrid, solved.moves)'), 'Custom Build must show only the walkthrough grid instead of a duplicate final grid');
 for (const pagePath of ['dist/simulation.html', 'dist/simulation-difficulty.html']) {
   const page = read(pagePath);
   assert(page.includes('id="simulation-toggle"'), `${pagePath} must provide a single simulation toggle`);
