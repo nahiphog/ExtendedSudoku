@@ -69,7 +69,8 @@ generator.addEventListener('click', () => {
     finalPuzzle = puzzle;
     playableCells.forEach(entry => {
         const cell = (entry.row - 1) * 12 + entry.column - 1;
-        entry.cell.classList.toggle('completed-solution', !puzzle[cell]);
+        entry.cell.classList.toggle('given-number', Boolean(puzzle[cell]));
+        entry.cell.classList.toggle('completed-only', !puzzle[cell]);
     });
     const solvedWalkthrough = solveWithTechniques(puzzle, true);
     solveTrace = solvedWalkthrough.moves;
@@ -106,7 +107,7 @@ function renderFinalGrid(step) {
         tile.setAttribute('role', 'gridcell');
         if (!isBlackCell(cell) && displayed[cell]) {
             const number = document.createElement('span');
-            number.className = `placed-number${!finalPuzzle[cell] ? ' solution-number' : ''}`;
+            number.className = finalPuzzle[cell] ? 'given-number' : 'placed-number completed-only';
             number.textContent = displayed[cell];
             tile.append(number);
         }

@@ -15,12 +15,12 @@ const techniqueWeights = {
 const createCell = (cell, values, givens, candidates, eliminated = new Set(), highlighted = new Set()) => {
     const { row, column } = positionOf(cell);
     const element = document.createElement('div');
-    element.className = `cell${isBlackCell(cell) ? ' grey' : ''}${(column + 1) % 3 === 0 ? ' v-divider' : ''}${(row + 1) % 3 === 0 ? ' h-divider' : ''}${highlighted.has(cell) ? ' step-highlight' : ''}${!isBlackCell(cell) && !givens[cell] && values[cell] ? ' completed-solution' : ''}`;
+    element.className = `cell${isBlackCell(cell) ? ' grey' : ''}${(column + 1) % 3 === 0 ? ' v-divider' : ''}${(row + 1) % 3 === 0 ? ' h-divider' : ''}${highlighted.has(cell) ? ' step-highlight' : ''}`;
     if (isBlackCell(cell))
         return element;
     if (values[cell]) {
         const number = document.createElement('span');
-        number.className = givens[cell] ? 'given-number' : 'placed-number solution-number';
+        number.className = givens[cell] ? 'given-number' : 'placed-number completed-only';
         number.textContent = String(values[cell]);
         element.append(number);
         return element;

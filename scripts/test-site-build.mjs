@@ -16,7 +16,7 @@ const pages = [
 
 for (const [pagePath, scriptName] of pages) {
   const page = read(pagePath);
-  assert(page.includes('rel="icon" href="./favicon.svg"'), `${pagePath} must load the shared browser-tab icon`);
+  assert(page.includes('rel="icon" href="./favicon.png"'), `${pagePath} must load the shared browser-tab icon`);
   assert(page.includes('src="./core/extended-sudoku-core.js"'), `${pagePath} must load the local-file-safe solver bundle`);
   assert(page.includes(`src="./${scriptName}"`), `${pagePath} must load ${scriptName}`);
   assert(!page.includes(`type="module" src="./${scriptName}"`), `${pagePath} must not require file:// module imports`);
@@ -26,10 +26,21 @@ for (const [pagePath, scriptName] of pages) {
   assert(!/^import /m.test(script), `${scriptName} must be runnable from file:// without imports`);
 }
 
-assert(existsSync(resolve(root, 'dist/favicon.svg')), 'the shared browser-tab icon must be present');
+assert(existsSync(resolve(root, 'dist/favicon.png')), 'the shared browser-tab icon must be present');
+assert(existsSync(resolve(root, 'dist/about.js')), 'the shared About dialog script must be present');
 for (const pagePath of ['dist/index.html', 'dist/techniques.html', 'dist/validator.html', 'dist/simulation.html', 'dist/simulation-difficulty.html']) {
-  assert(read(pagePath).includes('rel="icon" href="./favicon.svg"'), `${pagePath} must load the shared browser-tab icon`);
+  assert(read(pagePath).includes('rel="icon" href="./favicon.png"'), `${pagePath} must load the shared browser-tab icon`);
+  assert(read(pagePath).includes('src="./about.js"'), `${pagePath} must load the shared About dialog`);
 }
+const aboutScript = read('dist/about.js');
+assert(aboutScript.includes("aboutButton.textContent = 'About'") && aboutScript.includes('Rows and columns continue across the empty spaces.'), 'the About dialog must provide the refined rules');
+
+const generatorSource = read('src/app.ts');
+assert(generatorSource.includes("classList.toggle('given-number', Boolean(puzzle[cell]))"), 'the completed grid must mark final-grid givens as black');
+assert(generatorSource.includes("classList.toggle('completed-only', !puzzle[cell])"), 'the completed grid must mark non-final values as blue');
+assert(generatorSource.includes("finalPuzzle[cell] ? 'given-number' : 'placed-number completed-only'"), 'the final-grid walkthrough must use the shared clue colors');
+const validatorSource = read('src/validator.ts');
+assert(validatorSource.includes("givens[cell] ? 'given-number' : 'placed-number completed-only'"), 'the verifier must use the shared clue colors');
 
 assert(existsSync(resolve(root, 'dist/simulation-difficulty-worker.js')), 'difficulty simulation must emit its isolated rating worker');
 assert(read('dist/simulation-difficulty.js').includes('simulation-difficulty-worker.js'), 'difficulty simulation must use the rating worker');
