@@ -21,5 +21,7 @@
   dialog.append(heading, description, closeButton);
 
   aboutButton.addEventListener('click', () => dialog.showModal());
-  document.body.append(aboutButton, dialog);
+  const siteTitle = document.querySelector('.site-title');
+  (siteTitle ?? document.body).append(aboutButton);
+  document.body.append(dialog);
 })();

@@ -34,6 +34,9 @@ for (const pagePath of ['dist/index.html', 'dist/techniques.html', 'dist/validat
 }
 const aboutScript = read('dist/about.js');
 assert(aboutScript.includes("aboutButton.textContent = 'About'") && aboutScript.includes('Rows and columns continue across the empty spaces.'), 'the About dialog must provide the refined rules');
+assert(aboutScript.includes("document.querySelector('.site-title')") && aboutScript.includes('siteTitle ?? document.body'), 'the About button must be placed inside the header');
+const styles = read('dist/styles.css');
+assert(styles.includes('width: 50vw') && styles.includes('text-overflow: ellipsis'), 'the header must be half-width and keep its title within bounds');
 
 const generatorSource = read('src/app.ts');
 assert(generatorSource.includes("classList.toggle('given-number', Boolean(puzzle[cell]))"), 'the completed grid must mark final-grid givens as black');
