@@ -48,6 +48,8 @@ assert(!generatePage.includes('<h1>Generate a puzzle</h1>') && generatePage.incl
 assert(styles.includes('.generate-controls .generate-top { display: inline-flex; flex: 0 0 auto; inline-size: fit-content; width: fit-content !important;') && styles.includes('.difficulty-rating-value'), 'the Generate controls and rating need legible compact styling');
 
 const generatorSource = read('src/app.ts');
+assert(!generatorSource.includes('greyAreas') && generatorSource.includes('const grey = isBlackCell'), 'Generate must render the currently selected grid format rather than a fixed Version 1 layout');
+assert(read('src/simulation-difficulty-worker.ts').includes('setGridFormat(data.format)'), 'difficulty-simulation workers must solve with the selected grid format');
 assert(generatorSource.includes("classList.toggle('given-number', Boolean(puzzle[cell]))"), 'the completed grid must mark final-grid givens as black');
 assert(generatorSource.includes("classList.toggle('completed-only', !puzzle[cell])"), 'the completed grid must mark non-final values as blue');
 assert(generatorSource.includes("finalPuzzle[cell] ? 'given-number' : 'placed-number completed-only'"), 'the final-grid walkthrough must use the shared clue colors');

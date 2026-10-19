@@ -3,9 +3,10 @@
 // safely stopped without freezing the simulation controls.
 importScripts('./core/extended-sudoku-core.js');
 
-self.onmessage = ({ data: puzzle }) => {
+self.onmessage = ({ data }) => {
   try {
-    const solved = self.ExtendedSudokuCore.solveWithTechniques(puzzle);
+    self.ExtendedSudokuCore.setGridFormat(data.format);
+    const solved = self.ExtendedSudokuCore.solveWithTechniques(data.puzzle);
     self.postMessage({ moves: solved.moves });
   } catch (error) {
     self.postMessage({ error: String(error) });

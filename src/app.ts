@@ -1,6 +1,5 @@
 // @ts-nocheck
-const { applyPlacement, buildCandidates, removeCandidate, solveWithTechniques, generateCompletedGrid, digSingleCell, digDualCell } = window.ExtendedSudokuCore;
-const greyAreas = [[1, 10], [4, 7], [7, 4], [10, 1]];
+const { isBlackCell, applyPlacement, buildCandidates, removeCandidate, solveWithTechniques, generateCompletedGrid, digSingleCell, digDualCell } = window.ExtendedSudokuCore;
       const grid = document.querySelector('#grid');
       const well = document.querySelector('#well');
       const generator = document.querySelector('#generate');
@@ -29,17 +28,9 @@ const greyAreas = [[1, 10], [4, 7], [7, 4], [10, 1]];
       const values = Array.from({ length: 12 }, () => Array(12).fill(null));
       let finalPuzzle = null;
       let solveTrace = [];
-      const isBlackCell = cell => {
-        const row = Math.floor(cell / 12) + 1;
-        const column = cell % 12 + 1;
-        return greyAreas.some(([startRow, startColumn]) => row >= startRow && row < startRow + 3 && column >= startColumn && column < startColumn + 3);
-      };
-      const layout = window.ExtendedEngine.buildLayout(isBlackCell);
       for (let row = 1; row <= 12; row += 1) {
         for (let column = 1; column <= 12; column += 1) {
-          const grey = greyAreas.some(([startRow, startColumn]) =>
-            row >= startRow && row < startRow + 3 && column >= startColumn && column < startColumn + 3
-          );
+          const grey = isBlackCell((row - 1) * 12 + column - 1);
           const cell = document.createElement(grey ? 'div' : 'button');
           cell.className = `cell${grey ? ' grey' : ''}${column % 3 === 0 ? ' v-divider' : ''}${row % 3 === 0 ? ' h-divider' : ''}`;
           cell.setAttribute('role', 'gridcell');
