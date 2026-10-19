@@ -36,11 +36,11 @@ for (const pagePath of ['dist/index.html', 'dist/custom-build.html', 'dist/techn
   assert(read(pagePath).includes('src="./about.js"'), `${pagePath} must load the shared About dialog`);
 }
 const aboutScript = read('dist/about.js');
-assert(aboutScript.includes("new Option('Version 1', 'v1')") && aboutScript.includes("new Option('Version 2', 'v2')"), 'the header must offer both grid formats');
+assert(aboutScript.includes("button.textContent = version === 'v1' ? '1' : '2'") && aboutScript.includes("formatControl.className = 'grid-format-toggle'"), 'the header must offer a prominent two-button grid-format toggle');
 assert(aboutScript.includes("aboutButton.textContent = 'About'") && aboutScript.includes('Rows and columns continue across the empty spaces.'), 'the About dialog must provide the refined rules');
 assert(aboutScript.includes("document.querySelector('.site-title')") && aboutScript.includes('siteTitle ?? document.body'), 'the About button must be placed inside the header');
 assert(aboutScript.includes("document.querySelector('.site-nav')") && aboutScript.includes('siteTitle.prepend(siteNav)'), 'the navigation menu must be placed inside the header');
-assert(aboutScript.includes("position: 'fixed'") && aboutScript.includes("right: '18px'"), 'the About button must be pinned to the header’s right edge');
+assert(aboutScript.includes("position: 'fixed'") && aboutScript.includes("right: '16px'") && aboutScript.includes("pointerEvents: 'auto'"), 'the About button must be interactive at the header’s right edge');
 const styles = read('dist/styles.css');
 assert(styles.includes('inset: 0 0 auto 0; width: auto; max-width: none') && styles.includes('position: absolute; top: 50%; left: 20px'), 'the header must span the viewport with navigation on its left');
 const generatePage = read('dist/index.html');
@@ -71,8 +71,8 @@ for (const pagePath of ['dist/index.html', 'dist/custom-build.html', 'dist/techn
   const page = read(pagePath);
   assert(page.includes('simulation-difficulty.html'), `${pagePath} must link to Simulation difficulty`);
   assert(page.includes('custom-build.html'), `${pagePath} must link to Custom Build`);
-  assert((page.match(/Extended Sudoku Maker/g) ?? []).length === 1, `${pagePath} must show the site title only in its header`);
 }
+assert(aboutScript.includes("'Expanded Sudoku Maker'") && aboutScript.includes("/Extended Sudoku/g"), 'the shared header script must rename the site across every page');
 const customBuildPage = read('dist/custom-build.html');
 assert(customBuildPage.includes('id="custom-grid"') && customBuildPage.includes('id="build-toggle"') && !customBuildPage.includes('id="halt-build"'), 'Custom Build must provide one toggle for the selectable grid and build controls');
 assert(customBuildPage.includes('id="minimum-difficulty"') && customBuildPage.includes('<option value="0" selected>0</option>') && customBuildPage.includes('id="maximum-difficulty"') && customBuildPage.includes('<option value="2000" selected>2000</option>'), 'Custom Build must provide its requested difficulty range controls');

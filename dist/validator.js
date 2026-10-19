@@ -287,9 +287,9 @@ button.addEventListener('click', () => {
         : viable.find(({ format }) => format === preferred) ?? viable[0] ?? solvedFormats.find(({ format }) => format === preferred) ?? solvedFormats[0];
     setGridFormat(chosen.format);
     window.ExtendedSudokuGridFormat.set(chosen.format);
-    const formatSelect = document.querySelector('.grid-format-control select');
-    if (formatSelect)
-        formatSelect.value = chosen.format;
+    document.querySelectorAll('.grid-format-toggle button').forEach((formatButton) => {
+        formatButton.setAttribute('aria-pressed', String(formatButton.title.endsWith(chosen.format === 'v1' ? '1' : '2')));
+    });
     const formatNotice = viable.length > 1
         ? `Both grid formats are compatible with this incomplete string; using the currently selected ${chosen.format.toUpperCase()}. `
         : `Detected ${chosen.format.toUpperCase()}. `;

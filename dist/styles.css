@@ -170,9 +170,12 @@ h2, h3 { color: #394080; }
 .about-dialog p { margin: 0 0 20px; line-height: 1.55; }
 .about-dialog button { float: right; padding: 9px 15px; border: 0; border-radius: 9px; color: #fff; background: var(--indigo); font: 700 14px/1 "Trebuchet MS", Arial, sans-serif; cursor: pointer; }
 .about-dialog button:hover, .about-dialog button:focus-visible { background: var(--coral); outline: 0; }
-.grid-format-control { position: fixed; top: 10px; right: 94px; z-index: 20; color: var(--ink); font: 700 12px/1 "Trebuchet MS", Arial, sans-serif; pointer-events: auto; }
-.grid-format-control select { margin-left: 3px; padding: 6px 8px; border: 0; border-radius: 999px; color: var(--ink); background: #fff; box-shadow: 0 3px 10px #1d24501c; font: inherit; }
-@media (max-width: 720px) { .grid-format-control { top: 9px; right: 78px; } .grid-format-control select { max-width: 92px; } }
+.grid-format-toggle { position: fixed; top: 8px; right: 102px; z-index: 20; display: flex; align-items: center; gap: 4px; padding: 4px 6px 4px 9px; border: 2px solid #fff; border-radius: 999px; color: #fff; background: #a6005d; box-shadow: 0 3px 10px #7f00471f; font: 800 12px/1 "Trebuchet MS", Arial, sans-serif; pointer-events: auto; }
+.grid-format-toggle span { margin-right: 2px; }
+.grid-format-toggle button { min-width: 28px; min-height: 28px; padding: 0 8px; border: 0; border-radius: 999px; color: #a6005d; background: #fff; font: 800 13px/1 "Trebuchet MS", Arial, sans-serif; cursor: pointer; }
+.grid-format-toggle button[aria-pressed="true"] { color: #fff; background: var(--indigo); box-shadow: inset 0 0 0 2px #fff; }
+.grid-format-toggle button:hover, .grid-format-toggle button:focus-visible { outline: 2px solid var(--sun); outline-offset: 2px; }
+@media (max-width: 720px) { .grid-format-toggle { top: 7px; right: 76px; padding: 3px 4px; } .grid-format-toggle span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; } .grid-format-toggle button { min-width: 26px; min-height: 26px; } }
 @media (max-width: 900px) { .custom-walkthrough { grid-template-columns: 1fr; } .custom-walkthrough-info { grid-row: 2; } }
 @media (max-width: 720px) { body { padding: 66px 10px 28px; } .site-title { padding: 0 72px; } .site-nav { left: 10px; } .site-nav select { max-width: 110px; } .about-button { top: 9px; right: 10px; } .layout { padding: 18px; border-radius: 18px; } }
 @media (max-width: 540px) { .validator-actions { grid-template-columns: 1fr; } }
