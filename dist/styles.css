@@ -170,6 +170,9 @@ h2, h3 { color: #394080; }
 .about-dialog p { margin: 0 0 20px; line-height: 1.55; }
 .about-dialog button { float: right; padding: 9px 15px; border: 0; border-radius: 9px; color: #fff; background: var(--indigo); font: 700 14px/1 "Trebuchet MS", Arial, sans-serif; cursor: pointer; }
 .about-dialog button:hover, .about-dialog button:focus-visible { background: var(--coral); outline: 0; }
+.grid-format-control { position: fixed; top: 10px; right: 94px; z-index: 20; color: var(--ink); font: 700 12px/1 "Trebuchet MS", Arial, sans-serif; pointer-events: auto; }
+.grid-format-control select { margin-left: 3px; padding: 6px 8px; border: 0; border-radius: 999px; color: var(--ink); background: #fff; box-shadow: 0 3px 10px #1d24501c; font: inherit; }
+@media (max-width: 720px) { .grid-format-control { top: 9px; right: 78px; } .grid-format-control select { max-width: 92px; } }
 @media (max-width: 900px) { .custom-walkthrough { grid-template-columns: 1fr; } .custom-walkthrough-info { grid-row: 2; } }
 @media (max-width: 720px) { body { padding: 66px 10px 28px; } .site-title { padding: 0 72px; } .site-nav { left: 10px; } .site-nav select { max-width: 110px; } .about-button { top: 9px; right: 10px; } .layout { padding: 18px; border-radius: 18px; } }
 @media (max-width: 540px) { .validator-actions { grid-template-columns: 1fr; } }

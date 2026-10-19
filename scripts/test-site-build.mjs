@@ -19,6 +19,7 @@ for (const [pagePath, scriptName] of pages) {
   const page = read(pagePath);
   assert(page.includes('rel="icon" href="./favicon.png"'), `${pagePath} must load the shared browser-tab icon`);
   assert(page.includes('src="./core/extended-sudoku-core.js"'), `${pagePath} must load the local-file-safe solver bundle`);
+  assert(page.includes('src="./grid-format.js"'), `${pagePath} must load the shared grid-format preference before the solver`);
   assert(page.includes(`src="./${scriptName}"`), `${pagePath} must load ${scriptName}`);
   assert(!page.includes(`type="module" src="./${scriptName}"`), `${pagePath} must not require file:// module imports`);
   const scriptPath = resolve(root, 'dist', scriptName);
@@ -28,12 +29,14 @@ for (const [pagePath, scriptName] of pages) {
 }
 
 assert(existsSync(resolve(root, 'dist/favicon.png')), 'the shared browser-tab icon must be present');
+assert(existsSync(resolve(root, 'dist/grid-format.js')), 'the shared grid-format preference script must be present');
 assert(existsSync(resolve(root, 'dist/about.js')), 'the shared About dialog script must be present');
 for (const pagePath of ['dist/index.html', 'dist/custom-build.html', 'dist/techniques.html', 'dist/validator.html', 'dist/simulation.html', 'dist/simulation-difficulty.html']) {
   assert(read(pagePath).includes('rel="icon" href="./favicon.png"'), `${pagePath} must load the shared browser-tab icon`);
   assert(read(pagePath).includes('src="./about.js"'), `${pagePath} must load the shared About dialog`);
 }
 const aboutScript = read('dist/about.js');
+assert(aboutScript.includes("new Option('Version 1', 'v1')") && aboutScript.includes("new Option('Version 2', 'v2')"), 'the header must offer both grid formats');
 assert(aboutScript.includes("aboutButton.textContent = 'About'") && aboutScript.includes('Rows and columns continue across the empty spaces.'), 'the About dialog must provide the refined rules');
 assert(aboutScript.includes("document.querySelector('.site-title')") && aboutScript.includes('siteTitle ?? document.body'), 'the About button must be placed inside the header');
 assert(aboutScript.includes("document.querySelector('.site-nav')") && aboutScript.includes('siteTitle.prepend(siteNav)'), 'the navigation menu must be placed inside the header');
@@ -122,5 +125,6 @@ vm.runInNewContext(read('dist/core/extended-sudoku-core.js'), browserContext);
 for (const functionName of ['solveWithTechniques', 'buildCandidates', 'findSolutions', 'generateCompletedGrid', 'digSingleCell', 'digDualCell']) {
   assert(typeof browserContext.window.ExtendedSudokuCore?.[functionName] === 'function', `browser bundle must expose ${functionName}`);
 }
+assert(typeof browserContext.window.ExtendedSudokuCore?.setGridFormat === 'function', 'browser bundle must expose grid-format selection');
 
 console.log('Passed Generate and Verify module preflight.');

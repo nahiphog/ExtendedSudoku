@@ -5,13 +5,17 @@ export const CELL_COUNT = GRID_SIZE * GRID_SIZE;
 export const BOX_SIZE = 3;
 export const DIGITS = Object.freeze([1, 2, 3, 4, 5, 6, 7, 8, 9] as const);
 
-/** Top-left, one-based positions of the four black 3×3 boxes. */
-export const BLACK_BOX_ORIGINS = Object.freeze([
-  [1, 10],
-  [4, 7],
-  [7, 4],
-  [10, 1],
-] as const);
+export type GridFormatVersion = 'v1' | 'v2';
+
+/** Black 3×3 boxes, numbered from left to right and top to bottom. */
+export const GRID_FORMATS: Record<GridFormatVersion, readonly number[]> = Object.freeze({
+  v1: Object.freeze([4, 7, 10, 13]),
+  v2: Object.freeze([4, 6, 11, 13]),
+});
+
+const requestedFormat = (globalThis as typeof globalThis & { ExtendedSudokuGridFormat?: { get?: () => string } })
+  .ExtendedSudokuGridFormat?.get?.();
+export let gridFormat: GridFormatVersion = requestedFormat === 'v2' ? 'v2' : 'v1';
 
 export interface Position {
   row: number;
@@ -27,17 +31,12 @@ export const positionOf = (cell: number): Position => {
   return { row, column, box: Math.floor(row / BOX_SIZE) * 4 + Math.floor(column / BOX_SIZE) + 1 };
 };
 
-export const isBlackCell = (cell: number): boolean => {
-  const { row, column } = positionOf(cell);
-  return BLACK_BOX_ORIGINS.some(([startRow, startColumn]) =>
-    row + 1 >= startRow && row + 1 < startRow + BOX_SIZE &&
-    column + 1 >= startColumn && column + 1 < startColumn + BOX_SIZE,
-  );
-};
+const isBlackCellForFormat = (cell: number, format: GridFormatVersion): boolean =>
+  GRID_FORMATS[format].includes(positionOf(cell).box);
 
-export const ACTIVE_CELLS = Object.freeze(
-  Array.from({ length: CELL_COUNT }, (_, cell) => cell).filter((cell) => !isBlackCell(cell)),
-);
+export const isBlackCell = (cell: number): boolean => isBlackCellForFormat(cell, gridFormat);
+
+export let ACTIVE_CELLS: readonly number[] = [];
 
 const buildUnits = (): number[][] => {
   const units: number[][] = [];
@@ -62,13 +61,25 @@ const buildUnits = (): number[][] => {
   return units;
 };
 
-export const UNITS = Object.freeze(buildUnits().map((unit) => Object.freeze(unit)));
-export const CELL_UNITS = Object.freeze(
-  Array.from({ length: CELL_COUNT }, () => [] as number[]).map((unitIndexes, cell) => {
+export let UNITS: readonly (readonly number[])[] = [];
+export let CELL_UNITS: readonly (readonly number[])[] = [];
+
+const rebuildGrid = (): void => {
+  ACTIVE_CELLS = Object.freeze(Array.from({ length: CELL_COUNT }, (_, cell) => cell).filter((cell) => !isBlackCell(cell)));
+  UNITS = Object.freeze(buildUnits().map((unit) => Object.freeze(unit)));
+  CELL_UNITS = Object.freeze(Array.from({ length: CELL_COUNT }, () => [] as number[]).map((unitIndexes, cell) => {
     UNITS.forEach((unit, unitIndex) => { if (unit.includes(cell)) unitIndexes.push(unitIndex); });
     return Object.freeze(unitIndexes);
-  }),
-);
+  }));
+};
+
+/** Selects a format and rebuilds all constraints that depend on the black boxes. */
+export const setGridFormat = (format: GridFormatVersion): void => {
+  gridFormat = format === 'v2' ? 'v2' : 'v1';
+  rebuildGrid();
+};
+
+rebuildGrid();
 
 export const emptyGrid = (): GridValues => Array(CELL_COUNT).fill(0);
 
@@ -79,7 +90,7 @@ export const serializePuzzle = (values: readonly number[]): string =>
   }).join('');
 
 /** Parses a 144-character string. Black cells must be represented by periods. */
-export const parsePuzzle = (input: string): ParsedPuzzle => {
+export const parsePuzzle = (input: string, format: GridFormatVersion = gridFormat): ParsedPuzzle => {
   const compact = input.replace(/\s/g, '');
   const errors: string[] = [];
   const values = emptyGrid();
@@ -91,7 +102,7 @@ export const parsePuzzle = (input: string): ParsedPuzzle => {
       errors.push(`Character ${cell + 1} must be a digit 1–9 or a period.`);
       continue;
     }
-    if (isBlackCell(cell)) {
+    if (isBlackCellForFormat(cell, format)) {
       errors.push(`Character ${cell + 1} is in a black cell and must be a period.`);
       continue;
     }

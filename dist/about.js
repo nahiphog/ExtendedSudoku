@@ -1,4 +1,17 @@
 (() => {
+  const formatControl = document.createElement('label');
+  formatControl.className = 'grid-format-control';
+  formatControl.textContent = 'Grid ';
+  const formatSelect = document.createElement('select');
+  formatSelect.setAttribute('aria-label', 'Grid format');
+  formatSelect.add(new Option('Version 1', 'v1'));
+  formatSelect.add(new Option('Version 2', 'v2'));
+  formatSelect.value = window.ExtendedSudokuGridFormat.get();
+  formatSelect.addEventListener('change', () => {
+    window.ExtendedSudokuGridFormat.set(formatSelect.value);
+    window.location.reload();
+  });
+  formatControl.append(formatSelect);
   const aboutButton = document.createElement('button');
   aboutButton.id = 'about-button';
   aboutButton.type = 'button';
@@ -27,6 +40,6 @@
   const siteTitle = document.querySelector('.site-title');
   const siteNav = document.querySelector('.site-nav');
   if (siteTitle && siteNav) siteTitle.prepend(siteNav);
-  (siteTitle ?? document.body).append(aboutButton);
+  (siteTitle ?? document.body).append(formatControl, aboutButton);
   document.body.append(dialog);
 })();

@@ -1,4 +1,4 @@
-import { cellAt, parsePuzzle } from '../dist/core/grid.js';
+import { ACTIVE_CELLS, cellAt, isBlackCell, parsePuzzle, setGridFormat } from '../dist/core/grid.js';
 import { applyPlacement, buildCandidates, removeCandidate } from '../dist/core/candidates.js';
 import { ENABLED_LOGICAL_TECHNIQUES, findBasicFish, findEmptyRectangle, findHiddenSubset, findNakedSubset, findSolutions, findWWing, findXYWing, findXYZWing, isConsistent, solveWithTechniques } from '../dist/core/solver.js';
 import { digSingleCell, generateCompletedGrid } from '../dist/core/generator.js';
@@ -166,5 +166,15 @@ const generated = generateCompletedGrid();
 assert(isConsistent(generated), 'a generated completed grid must be consistent');
 const dug = digSingleCell(generated);
 assert(findSolutions(dug, 2).length === 1, 'single-cell digging must retain one solution');
+
+setGridFormat('v2');
+assert(ACTIVE_CELLS.length === 108, 'Version 2 must retain 108 playable cells');
+assert([4, 6, 11, 13].every((box) => isBlackCell(cellAt(Math.floor((box - 1) / 4) * 3, ((box - 1) % 4) * 3))),
+  'Version 2 must black out boxes 4, 6, 11, and 13');
+assert(!isBlackCell(cellAt(3, 6)) && isBlackCell(cellAt(3, 3)), 'Version 2 must replace Version 1 boxes 7 and 10 with 6 and 11');
+const versionTwoGrid = generateCompletedGrid();
+assert(isConsistent(versionTwoGrid) && findSolutions(versionTwoGrid, 2).length === 1,
+  'Version 2 generated grids must solve uniquely under Version 2 constraints');
+setGridFormat('v1');
 
 console.log(`Passed ${result.moves.length} validated walkthrough moves and ${verifyFixtures.length} Verify-page regressions.`);
