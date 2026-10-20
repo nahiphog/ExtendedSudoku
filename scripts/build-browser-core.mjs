@@ -17,7 +17,7 @@ const body = sourceFiles
   .join('\n');
 
 const api = [
-  'ACTIVE_CELLS', 'describeCell', 'isBlackCell', 'positionOf', 'parsePuzzle',
+  'GRID_VERSION', 'ACTIVE_CELLS', 'describeCell', 'isBlackCell', 'positionOf', 'parsePuzzle',
   'applyPlacement', 'buildCandidates', 'removeCandidate',
   'findSolutions', 'solveWithTechniques',
   'generateCompletedGrid', 'digSingleCell', 'digDualCell',

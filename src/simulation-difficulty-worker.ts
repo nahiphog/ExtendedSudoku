@@ -1,11 +1,11 @@
 // @ts-nocheck
 // Kept separate from the page thread so an unusually expensive rating can be
 // safely stopped without freezing the simulation controls.
-importScripts('./core/extended-sudoku-core.js');
-
-self.onmessage = ({ data: puzzle }) => {
+self.onmessage = ({ data }) => {
   try {
-    const solved = self.ExtendedSudokuCore.solveWithTechniques(puzzle);
+    self.ExtendedSudokuGridVersion = data.version;
+    importScripts('./core/extended-sudoku-core.js');
+    const solved = self.ExtendedSudokuCore.solveWithTechniques(data.puzzle);
     self.postMessage({ moves: solved.moves });
   } catch (error) {
     self.postMessage({ error: String(error) });

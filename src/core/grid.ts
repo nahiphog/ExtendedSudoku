@@ -5,13 +5,17 @@ export const CELL_COUNT = GRID_SIZE * GRID_SIZE;
 export const BOX_SIZE = 3;
 export const DIGITS = Object.freeze([1, 2, 3, 4, 5, 6, 7, 8, 9] as const);
 
-/** Top-left, one-based positions of the four black 3×3 boxes. */
-export const BLACK_BOX_ORIGINS = Object.freeze([
-  [1, 10],
-  [4, 7],
-  [7, 4],
-  [10, 1],
-] as const);
+/** Version 2 swaps row bands 4–6 and 7–9, then renumbers rows normally. */
+const readGridVersion = (): 1 | 2 => {
+  const scope = globalThis as typeof globalThis & { ExtendedSudokuGridVersion?: number };
+  if (scope.ExtendedSudokuGridVersion === 2) return 2;
+  try { return scope.localStorage?.getItem('extended-sudoku-grid-version') === '2' ? 2 : 1; }
+  catch { return 1; }
+};
+export const GRID_VERSION = readGridVersion();
+export const BLACK_BOX_ORIGINS = Object.freeze(GRID_VERSION === 2
+  ? [[1, 10], [4, 4], [7, 7], [10, 1]] as const
+  : [[1, 10], [4, 7], [7, 4], [10, 1]] as const);
 
 export interface Position {
   row: number;

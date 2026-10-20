@@ -164,6 +164,8 @@ h2, h3 { color: #394080; }
 .custom-technique-summary .technique-ratings th, .custom-technique-summary .technique-ratings td { padding: 7px 8px; }
 .about-button { position: fixed !important; top: 10px; right: 18px; left: auto !important; z-index: 20; padding: 7px 10px; border: 0; border-radius: 999px; color: var(--ink); background: #fff; box-shadow: 0 3px 10px #1d24501c; font: 700 12px/1 "Trebuchet MS", Arial, sans-serif; cursor: pointer; pointer-events: auto; transform: none; }
 .about-button:hover, .about-button:focus-visible { color: #fff; background: var(--indigo); outline: 0; }
+.grid-version-select { position: fixed; top: 10px; right: 100px; z-index: 20; max-width: 150px; padding: 6px 8px; border: 2px solid #fff; border-radius: 9px; background: #3447b9; color: #fff; font: 700 13px/1 "Trebuchet MS", Arial, sans-serif; pointer-events: auto; cursor: pointer; }
+@media (max-width: 720px) { .grid-version-select { right: 82px; max-width: 120px; font-size: 11px; } }
 .about-dialog { width: min(92vw, 430px); padding: 26px; border: 0; border-radius: 18px; color: var(--ink); background: #fffdf8; box-shadow: 0 24px 70px #20223d66; }
 .about-dialog::backdrop { background: #20223d88; }
 .about-dialog h2 { margin: 0 0 12px; color: var(--indigo); font: 700 1.35rem/1.2 Georgia, serif; }

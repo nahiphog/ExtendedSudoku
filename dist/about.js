@@ -1,4 +1,18 @@
 (() => {
+  const gridVersion = document.createElement('select');
+  gridVersion.className = 'grid-version-select';
+  gridVersion.setAttribute('aria-label', 'Grid version');
+  const versionOne = document.createElement('option');
+  versionOne.value = '1'; versionOne.textContent = 'Grid version 1';
+  const versionTwo = document.createElement('option');
+  versionTwo.value = '2'; versionTwo.textContent = 'Grid version 2';
+  gridVersion.append(versionOne, versionTwo);
+  try { gridVersion.value = localStorage.getItem('extended-sudoku-grid-version') === '2' ? '2' : '1'; }
+  catch { gridVersion.value = '1'; }
+  gridVersion.addEventListener('change', () => {
+    try { localStorage.setItem('extended-sudoku-grid-version', gridVersion.value); location.reload(); }
+    catch { gridVersion.value = '1'; alert('Grid version selection requires browser storage.'); }
+  });
   const aboutButton = document.createElement('button');
   aboutButton.id = 'about-button';
   aboutButton.className = 'about-button';
@@ -28,6 +42,6 @@
   const siteTitle = document.querySelector('.site-title');
   const siteNav = document.querySelector('.site-nav');
   if (siteTitle && siteNav) siteTitle.prepend(siteNav);
-  (siteTitle ?? document.body).append(aboutButton);
+  (siteTitle ?? document.body).append(gridVersion, aboutButton);
   document.body.append(dialog);
 })();

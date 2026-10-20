@@ -4,13 +4,22 @@ const GRID_SIZE = 12;
 const CELL_COUNT = GRID_SIZE * GRID_SIZE;
 const BOX_SIZE = 3;
 const DIGITS = Object.freeze([1, 2, 3, 4, 5, 6, 7, 8, 9]);
-/** Top-left, one-based positions of the four black 3×3 boxes. */
-const BLACK_BOX_ORIGINS = Object.freeze([
-    [1, 10],
-    [4, 7],
-    [7, 4],
-    [10, 1],
-]);
+/** Version 2 swaps row bands 4–6 and 7–9, then renumbers rows normally. */
+const readGridVersion = () => {
+    const scope = globalThis;
+    if (scope.ExtendedSudokuGridVersion === 2)
+        return 2;
+    try {
+        return scope.localStorage?.getItem('extended-sudoku-grid-version') === '2' ? 2 : 1;
+    }
+    catch {
+        return 1;
+    }
+};
+const GRID_VERSION = readGridVersion();
+const BLACK_BOX_ORIGINS = Object.freeze(GRID_VERSION === 2
+    ? [[1, 10], [4, 4], [7, 7], [10, 1]]
+    : [[1, 10], [4, 7], [7, 4], [10, 1]]);
 const cellAt = (row, column) => row * GRID_SIZE + column;
 const positionOf = (cell) => {
     const row = Math.floor(cell / GRID_SIZE);
@@ -816,5 +825,5 @@ const digDualCell = (completed) => {
     return puzzle;
 };
 
-  global.ExtendedSudokuCore = { ACTIVE_CELLS, describeCell, isBlackCell, positionOf, parsePuzzle, applyPlacement, buildCandidates, removeCandidate, findSolutions, solveWithTechniques, generateCompletedGrid, digSingleCell, digDualCell };
+  global.ExtendedSudokuCore = { GRID_VERSION, ACTIVE_CELLS, describeCell, isBlackCell, positionOf, parsePuzzle, applyPlacement, buildCandidates, removeCandidate, findSolutions, solveWithTechniques, generateCompletedGrid, digSingleCell, digDualCell };
 }(typeof window !== 'undefined' ? window : globalThis));

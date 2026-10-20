@@ -146,5 +146,23 @@ vm.runInNewContext(read('dist/core/extended-sudoku-core.js'), browserContext);
 for (const functionName of ['solveWithTechniques', 'buildCandidates', 'findSolutions', 'generateCompletedGrid', 'digSingleCell', 'digDualCell']) {
   assert(typeof browserContext.window.ExtendedSudokuCore?.[functionName] === 'function', `browser bundle must expose ${functionName}`);
 }
+const versionOne = browserContext.window.ExtendedSudokuCore;
+const versionTwoContext = { window: {}, localStorage: { getItem: () => '2' } };
+vm.runInNewContext(read('dist/core/extended-sudoku-core.js'), versionTwoContext);
+const versionTwo = versionTwoContext.window.ExtendedSudokuCore;
+assert(versionOne.GRID_VERSION === 1 && versionTwo.GRID_VERSION === 2, 'the browser solver must load the chosen grid version');
+for (let cell = 0; cell < 144; cell += 1) {
+  const row = Math.floor(cell / 12);
+  const originalRow = row >= 3 && row < 6 ? row + 3 : row >= 6 && row < 9 ? row - 3 : row;
+  assert(versionTwo.isBlackCell(cell) === versionOne.isBlackCell(originalRow * 12 + cell % 12), 'Version 2 must swap precisely the middle row bands');
+}
+const versionOneGrid = versionOne.generateCompletedGrid();
+const versionTwoGrid = Array.from({ length: 144 }, (_, cell) => {
+  const row = Math.floor(cell / 12);
+  const originalRow = row >= 3 && row < 6 ? row + 3 : row >= 6 && row < 9 ? row - 3 : row;
+  return versionOneGrid[originalRow * 12 + cell % 12];
+});
+assert(versionTwo.findSolutions(versionTwoGrid, 2).length === 1, 'a band-swapped Version 1 solution must be valid under Version 2');
+assert(!read('src/app.ts').includes('greyAreas') && read('src/app.ts').includes('const grey = isBlackCell'), 'Generate must draw the solver’s selected grid layout');
 
 console.log('Passed Generate and Verify module preflight.');
