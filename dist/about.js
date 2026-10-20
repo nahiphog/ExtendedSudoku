@@ -1,6 +1,7 @@
 (() => {
   const aboutButton = document.createElement('button');
   aboutButton.id = 'about-button';
+  aboutButton.className = 'about-button';
   aboutButton.type = 'button';
   aboutButton.textContent = 'About';
   Object.assign(aboutButton.style, {

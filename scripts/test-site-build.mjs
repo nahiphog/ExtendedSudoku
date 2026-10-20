@@ -35,6 +35,30 @@ for (const pagePath of ['dist/index.html', 'dist/custom-build.html', 'dist/techn
 }
 const aboutScript = read('dist/about.js');
 assert(aboutScript.includes("aboutButton.textContent = 'About'") && aboutScript.includes('Rows and columns continue across the empty spaces.'), 'the About dialog must provide the refined rules');
+assert(aboutScript.includes("aboutButton.className = 'about-button'") && /\.about-button\s*\{[^}]*pointer-events:\s*auto/.test(read('dist/styles.css')), 'the About button must receive the interactive header styling');
+const elements = [];
+const createElement = (tag) => {
+  const element = { tag, style: {}, children: [], handlers: {}, open: false,
+    setAttribute() {}, append(...children) { this.children.push(...children); }, prepend(child) { this.children.unshift(child); },
+    addEventListener(type, handler) { this.handlers[type] = handler; },
+    showModal() { this.open = true; }, close() { this.open = false; } };
+  elements.push(element);
+  return element;
+};
+const header = createElement('header');
+const nav = createElement('nav');
+const body = createElement('body');
+vm.runInNewContext(aboutScript, { document: { createElement, body, querySelector: (selector) => selector === '.site-title' ? header : nav } });
+const aboutButton = elements.find((element) => element.id === 'about-button');
+const aboutDialog = elements.find((element) => element.tag === 'dialog');
+const closeButton = elements.find((element) => element.textContent === 'Close');
+aboutButton.handlers.click();
+assert(aboutDialog.open, 'About must open the rules dialog');
+closeButton.handlers.click();
+assert(!aboutDialog.open, 'Close must dismiss the About dialog');
+aboutButton.handlers.click();
+aboutDialog.handlers.click({ target: aboutDialog });
+assert(!aboutDialog.open, 'clicking the dialog backdrop must dismiss it');
 assert(aboutScript.includes("document.querySelector('.site-title')") && aboutScript.includes('siteTitle ?? document.body'), 'the About button must be placed inside the header');
 assert(aboutScript.includes("document.querySelector('.site-nav')") && aboutScript.includes('siteTitle.prepend(siteNav)'), 'the navigation menu must be placed inside the header');
 assert(aboutScript.includes("position: 'fixed'") && aboutScript.includes("right: '18px'"), 'the About button must be pinned to the header’s right edge');
