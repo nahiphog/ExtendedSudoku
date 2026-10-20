@@ -1,31 +1,10 @@
 (() => {
-  const formatControl = document.createElement('div');
-  formatControl.className = 'grid-format-toggle';
-  formatControl.setAttribute('aria-label', 'Grid version');
-  const formatLabel = document.createElement('span');
-  formatLabel.textContent = 'Grid version';
-  formatControl.append(formatLabel);
-  const formatButtons = ['v1', 'v2'].map((version) => {
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.textContent = version === 'v1' ? '1' : '2';
-    button.title = version === 'v1' ? 'Use grid version 1' : 'Use grid version 2';
-    button.setAttribute('aria-label', button.title);
-    button.setAttribute('aria-pressed', String(window.ExtendedSudokuGridFormat.get() === version));
-    button.addEventListener('click', () => {
-      window.ExtendedSudokuGridFormat.set(version);
-      window.location.reload();
-    });
-    formatControl.append(button);
-    return button;
-  });
   const aboutButton = document.createElement('button');
   aboutButton.id = 'about-button';
-  aboutButton.className = 'about-button';
   aboutButton.type = 'button';
   aboutButton.textContent = 'About';
   Object.assign(aboutButton.style, {
-    position: 'fixed', top: '8px', right: '16px', left: 'auto', transform: 'none', zIndex: '20', pointerEvents: 'auto',
+    position: 'fixed', top: '10px', right: '18px', left: 'auto', transform: 'none', zIndex: '20',
   });
   aboutButton.setAttribute('aria-haspopup', 'dialog');
 
@@ -47,13 +26,7 @@
   aboutButton.addEventListener('click', () => dialog.showModal());
   const siteTitle = document.querySelector('.site-title');
   const siteNav = document.querySelector('.site-nav');
-  document.title = document.title.replace(/Extended Sudoku/g, 'Expanded Sudoku');
-  if (siteTitle) {
-    Array.from(siteTitle.childNodes).filter((node) => node.nodeType === Node.TEXT_NODE).forEach((node) => {
-      node.textContent = node.textContent.replace('Extended Sudoku Maker', 'Expanded Sudoku Maker');
-    });
-  }
   if (siteTitle && siteNav) siteTitle.prepend(siteNav);
-  (siteTitle ?? document.body).append(formatControl, aboutButton);
+  (siteTitle ?? document.body).append(aboutButton);
   document.body.append(dialog);
 })();

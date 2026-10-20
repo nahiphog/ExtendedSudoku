@@ -19,7 +19,6 @@ for (const [pagePath, scriptName] of pages) {
   const page = read(pagePath);
   assert(page.includes('rel="icon" href="./favicon.png"'), `${pagePath} must load the shared browser-tab icon`);
   assert(page.includes('src="./core/extended-sudoku-core.js"'), `${pagePath} must load the local-file-safe solver bundle`);
-  assert(page.includes('src="./grid-format.js"'), `${pagePath} must load the shared grid-format preference before the solver`);
   assert(page.includes(`src="./${scriptName}"`), `${pagePath} must load ${scriptName}`);
   assert(!page.includes(`type="module" src="./${scriptName}"`), `${pagePath} must not require file:// module imports`);
   const scriptPath = resolve(root, 'dist', scriptName);
@@ -29,18 +28,16 @@ for (const [pagePath, scriptName] of pages) {
 }
 
 assert(existsSync(resolve(root, 'dist/favicon.png')), 'the shared browser-tab icon must be present');
-assert(existsSync(resolve(root, 'dist/grid-format.js')), 'the shared grid-format preference script must be present');
 assert(existsSync(resolve(root, 'dist/about.js')), 'the shared About dialog script must be present');
 for (const pagePath of ['dist/index.html', 'dist/custom-build.html', 'dist/techniques.html', 'dist/validator.html', 'dist/simulation.html', 'dist/simulation-difficulty.html']) {
   assert(read(pagePath).includes('rel="icon" href="./favicon.png"'), `${pagePath} must load the shared browser-tab icon`);
   assert(read(pagePath).includes('src="./about.js"'), `${pagePath} must load the shared About dialog`);
 }
 const aboutScript = read('dist/about.js');
-assert(aboutScript.includes("button.textContent = version === 'v1' ? '1' : '2'") && aboutScript.includes("formatControl.className = 'grid-format-toggle'"), 'the header must offer a prominent two-button grid-format toggle');
 assert(aboutScript.includes("aboutButton.textContent = 'About'") && aboutScript.includes('Rows and columns continue across the empty spaces.'), 'the About dialog must provide the refined rules');
 assert(aboutScript.includes("document.querySelector('.site-title')") && aboutScript.includes('siteTitle ?? document.body'), 'the About button must be placed inside the header');
 assert(aboutScript.includes("document.querySelector('.site-nav')") && aboutScript.includes('siteTitle.prepend(siteNav)'), 'the navigation menu must be placed inside the header');
-assert(aboutScript.includes("position: 'fixed'") && aboutScript.includes("right: '16px'") && aboutScript.includes("pointerEvents: 'auto'"), 'the About button must be interactive at the header’s right edge');
+assert(aboutScript.includes("position: 'fixed'") && aboutScript.includes("right: '18px'"), 'the About button must be pinned to the header’s right edge');
 const styles = read('dist/styles.css');
 assert(styles.includes('inset: 0 0 auto 0; width: auto; max-width: none') && styles.includes('position: absolute; top: 50%; left: 20px'), 'the header must span the viewport with navigation on its left');
 const generatePage = read('dist/index.html');
@@ -48,8 +45,6 @@ assert(!generatePage.includes('<h1>Generate a puzzle</h1>') && generatePage.incl
 assert(styles.includes('.generate-controls .generate-top { display: inline-flex; flex: 0 0 auto; inline-size: fit-content; width: fit-content !important;') && styles.includes('.difficulty-rating-value'), 'the Generate controls and rating need legible compact styling');
 
 const generatorSource = read('src/app.ts');
-assert(!generatorSource.includes('greyAreas') && generatorSource.includes('const grey = isBlackCell'), 'Generate must render the currently selected grid format rather than a fixed Version 1 layout');
-assert(read('src/simulation-difficulty-worker.ts').includes('setGridFormat(data.format)'), 'difficulty-simulation workers must solve with the selected grid format');
 assert(generatorSource.includes("classList.toggle('given-number', Boolean(puzzle[cell]))"), 'the completed grid must mark final-grid givens as black');
 assert(generatorSource.includes("classList.toggle('completed-only', !puzzle[cell])"), 'the completed grid must mark non-final values as blue');
 assert(generatorSource.includes("finalPuzzle[cell] ? 'given-number' : 'placed-number completed-only'"), 'the final-grid walkthrough must use the shared clue colors');
@@ -73,8 +68,8 @@ for (const pagePath of ['dist/index.html', 'dist/custom-build.html', 'dist/techn
   const page = read(pagePath);
   assert(page.includes('simulation-difficulty.html'), `${pagePath} must link to Simulation difficulty`);
   assert(page.includes('custom-build.html'), `${pagePath} must link to Custom Build`);
+  assert((page.match(/Extended Sudoku Maker/g) ?? []).length === 1, `${pagePath} must show the site title only in its header`);
 }
-assert(aboutScript.includes("'Expanded Sudoku Maker'") && aboutScript.includes("/Extended Sudoku/g"), 'the shared header script must rename the site across every page');
 const customBuildPage = read('dist/custom-build.html');
 assert(customBuildPage.includes('id="custom-grid"') && customBuildPage.includes('id="build-toggle"') && !customBuildPage.includes('id="halt-build"'), 'Custom Build must provide one toggle for the selectable grid and build controls');
 assert(customBuildPage.includes('id="minimum-difficulty"') && customBuildPage.includes('<option value="0" selected>0</option>') && customBuildPage.includes('id="maximum-difficulty"') && customBuildPage.includes('<option value="2000" selected>2000</option>'), 'Custom Build must provide its requested difficulty range controls');
@@ -127,6 +122,5 @@ vm.runInNewContext(read('dist/core/extended-sudoku-core.js'), browserContext);
 for (const functionName of ['solveWithTechniques', 'buildCandidates', 'findSolutions', 'generateCompletedGrid', 'digSingleCell', 'digDualCell']) {
   assert(typeof browserContext.window.ExtendedSudokuCore?.[functionName] === 'function', `browser bundle must expose ${functionName}`);
 }
-assert(typeof browserContext.window.ExtendedSudokuCore?.setGridFormat === 'function', 'browser bundle must expose grid-format selection');
 
 console.log('Passed Generate and Verify module preflight.');

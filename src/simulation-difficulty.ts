@@ -105,7 +105,7 @@ function calculateDifficulty(puzzle) {
       ? finish({ unknown: true })
       : finish({ rating: difficultyRating(data.moves ?? []) });
     worker.onerror = () => finish({ unknown: true });
-    worker.postMessage({ puzzle, format: window.ExtendedSudokuCore.gridFormat });
+    worker.postMessage(puzzle);
   });
 }
 

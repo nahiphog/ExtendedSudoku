@@ -1,5 +1,5 @@
 // @ts-nocheck
-const { isBlackCell, positionOf, parsePuzzle, setGridFormat, applyPlacement, buildCandidates, removeCandidate, findSolutions, solveWithTechniques } = window.ExtendedSudokuCore;
+const { ACTIVE_CELLS, isBlackCell, positionOf, parsePuzzle, applyPlacement, buildCandidates, removeCandidate, findSolutions, solveWithTechniques } = window.ExtendedSudokuCore;
 
 const input = document.querySelector<HTMLTextAreaElement>('#puzzle-input')!;
 const button = document.querySelector<HTMLButtonElement>('#check-puzzle')!;
@@ -179,7 +179,7 @@ const createSolutionCard = (heading: string, values: GridValues, givens: GridVal
   const card = document.createElement('div'); card.className = 'validator-card';
   const title = document.createElement('h2'); title.textContent = heading; card.append(title);
   const board = createBoard(values, givens);
-  if (other) window.ExtendedSudokuCore.ACTIVE_CELLS.forEach((cell) => { if (values[cell] !== other[cell]) board.querySelectorAll('.cell')[cell].classList.add('differs'); });
+  if (other) ACTIVE_CELLS.forEach((cell) => { if (values[cell] !== other[cell]) board.querySelectorAll('.cell')[cell].classList.add('differs'); });
   card.append(board, createGridCopyActions(values)); return card;
 };
 
@@ -209,44 +209,23 @@ clearButton.addEventListener('click', clearInput);
 
 button.addEventListener('click', () => {
   solutions.replaceChildren();
-  const candidates = (['v1', 'v2'] as const).map((format) => ({ format, parsed: parsePuzzle(input.value, format) }))
-    .filter(({ parsed }) => !parsed.errors.length);
-  if (!candidates.length) {
-    const current = parsePuzzle(input.value);
-    validatorStatus.textContent = current.errors[0] ?? 'The puzzle string does not match either grid format.';
-    return;
-  }
-  const solvedFormats = candidates.map(({ format, parsed }) => {
-    setGridFormat(format);
-    return { format, parsed, found: findSolutions(parsed.values, 2) };
-  });
-  const viable = solvedFormats.filter(({ found }) => found.length > 0);
-  const preferred = window.ExtendedSudokuGridFormat.get();
-  const chosen = viable.length === 1 ? viable[0]
-    : viable.find(({ format }) => format === preferred) ?? viable[0] ?? solvedFormats.find(({ format }) => format === preferred) ?? solvedFormats[0];
-  setGridFormat(chosen.format);
-  window.ExtendedSudokuGridFormat.set(chosen.format);
-  document.querySelectorAll<HTMLButtonElement>('.grid-format-toggle button').forEach((formatButton) => {
-    formatButton.setAttribute('aria-pressed', String(formatButton.title.endsWith(chosen.format === 'v1' ? '1' : '2')));
-  });
-  const formatNotice = viable.length > 1
-    ? `Both grid formats are compatible with this incomplete string; using the currently selected ${chosen.format.toUpperCase()}. `
-    : `Detected ${chosen.format.toUpperCase()}. `;
-  if (!chosen.found.length) { validatorStatus.textContent = `${formatNotice}This puzzle has no solution.`; return; }
-  const givens = [...chosen.parsed.values];
-  const found = chosen.found;
+  const parsed = parsePuzzle(input.value);
+  if (parsed.errors.length) { validatorStatus.textContent = parsed.errors[0]; return; }
+  const givens = [...parsed.values];
+  const found = findSolutions(givens, 2);
+  if (!found.length) { validatorStatus.textContent = 'This puzzle has no solution.'; return; }
   if (found.length > 1) {
-    validatorStatus.textContent = `${formatNotice}This puzzle is not unique. Two solutions are shown; differing cells are orange.`;
+    validatorStatus.textContent = 'This puzzle is not unique. Two solutions are shown; differing cells are orange.';
     solutions.append(createSolutionCard('Solution 1', found[0], givens, found[1]), createSolutionCard('Solution 2', found[1], givens, found[0]));
     solutions.scrollIntoView({ behavior: 'smooth', block: 'start' });
     return;
   }
   const solved = solveWithTechniques(givens, true);
   validatorStatus.textContent = !solved.walkthroughValid
-    ? `${formatNotice}This puzzle has a unique solution. The walkthrough stopped safely: ${solved.walkthroughError}`
+    ? `This puzzle has a unique solution. The walkthrough stopped safely: ${solved.walkthroughError}`
     : solved.usedBruteForce
-    ? `${formatNotice}This puzzle has a unique solution. Logical techniques are shown first; brute force follows only when they are exhausted.`
-    : `${formatNotice}This puzzle has a unique solution using the supported logical techniques.`;
+    ? 'This puzzle has a unique solution. Logical techniques are shown first; brute force follows only when they are exhausted.'
+    : 'This puzzle has a unique solution using the supported logical techniques.';
   const card = document.createElement('div'); card.className = 'validator-card';
   const heading = document.createElement('h2'); heading.textContent = 'Unique solution';
   card.append(

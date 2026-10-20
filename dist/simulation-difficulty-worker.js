@@ -3,10 +3,9 @@
 // Kept separate from the page thread so an unusually expensive rating can be
 // safely stopped without freezing the simulation controls.
 importScripts('./core/extended-sudoku-core.js');
-self.onmessage = ({ data }) => {
+self.onmessage = ({ data: puzzle }) => {
     try {
-        self.ExtendedSudokuCore.setGridFormat(data.format);
-        const solved = self.ExtendedSudokuCore.solveWithTechniques(data.puzzle);
+        const solved = self.ExtendedSudokuCore.solveWithTechniques(puzzle);
         self.postMessage({ moves: solved.moves });
     }
     catch (error) {
