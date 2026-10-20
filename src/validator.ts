@@ -49,15 +49,19 @@ const createBoard = (values: readonly number[], givens: readonly number[], candi
   board.className = `walkthrough-board${sourceCells.length ? ' has-active-step' : ''}`;
   const topGuide = document.createElement('div'); topGuide.className = 'top-guide';
   const leftGuide = document.createElement('div'); leftGuide.className = 'left-guide';
-  sourceCells.forEach((cell) => {
-    const { row, column } = positionOf(cell);
+  const rows = new Set(sourceCells.map((cell) => positionOf(cell).row));
+  const columns = new Set(sourceCells.map((cell) => positionOf(cell).column));
+  columns.forEach((column) => {
     const topArrow = document.createElement('span');
     topArrow.className = 'guide-arrow'; topArrow.textContent = '▼';
     topArrow.style.left = `${((column + 0.5) / 12) * 100}%`;
+    topGuide.append(topArrow);
+  });
+  rows.forEach((row) => {
     const leftArrow = document.createElement('span');
     leftArrow.className = 'guide-arrow'; leftArrow.textContent = '▶';
     leftArrow.style.top = `${((row + 0.5) / 12) * 100}%`;
-    topGuide.append(topArrow); leftGuide.append(leftArrow);
+    leftGuide.append(leftArrow);
   });
   const grid = document.createElement('div'); grid.className = 'grid final-grid validator-grid';
   for (let cell = 0; cell < 144; cell += 1) grid.append(createCell(cell, values, givens, candidates, eliminated, highlighted));
@@ -119,7 +123,8 @@ const createWalkthrough = (givens: GridValues, moves: SolveMove[]): HTMLElement 
       else eliminated = new Set((activeMove.eliminations ?? []).map(({ cell, digit }) => `${cell}:${digit}`));
     }
     const sources = activeMove?.sourceCells ?? [];
-    gridShell.replaceChildren(createBoard(state, givens, currentStep > 0 ? candidates : undefined, eliminated, new Set(sources), sources));
+    const relevant = [...new Set([...sources, ...(activeMove?.eliminations ?? []).map(({ cell }) => cell), ...(activeMove?.cell !== undefined ? [activeMove.cell] : [])])];
+    gridShell.replaceChildren(createBoard(state, givens, currentStep > 0 ? candidates : undefined, eliminated, new Set(sources), relevant));
     select.value = String(currentStep);
     start.disabled = currentStep === 0; previous.disabled = currentStep === 0;
     next.disabled = currentStep === lastStep; last.disabled = currentStep === lastStep;

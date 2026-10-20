@@ -554,7 +554,11 @@ const findBasicFish = (candidates, size) => {
                     continue;
                 const baseName = rowBased ? 'rows' : 'columns';
                 const coverName = rowBased ? 'columns' : 'rows';
-                return eliminationMove(technique, eliminations, sourceCells, `A ${technique} on ${digit} in ${baseName} ${baseLines.map((line) => line + 1).join(', ')} confines it to ${coverName} ${coverLines.map((line) => line + 1).join(', ')}.`);
+                return eliminationMove(technique, eliminations, sourceCells, `${technique} on candidate ${digit}: in ${baseName} ${baseLines.map((line) => line + 1).join(', ')}, ` +
+                    `all remaining positions for ${digit} lie in ${coverName} ${coverLines.map((line) => line + 1).join(', ')}. ` +
+                    `Each of those ${baseName} must contain ${digit} once, so those ${coverName} must contain the ${digit}s for these ${baseName}. ` +
+                    `Therefore, ${digit} can be removed from other cells in those ${coverName}: ` +
+                    `${eliminations.map(({ cell }) => describeCell(cell)).join(', ')}.`);
             }
         }
     return null;

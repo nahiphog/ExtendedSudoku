@@ -243,12 +243,33 @@ const createWalkthrough = (givens, moves) => {
                 eliminated = new Set((activeMove.eliminations ?? []).map(({ cell, digit }) => `${cell}:${digit}`));
         }
         const renderedBoard = createBoard(values, givens, currentStep > 0 ? candidates : undefined, eliminated);
-        const highlightedCells = new Set();
+        const highlightedCells = new Set(activeMove?.sourceCells ?? []);
         if (activeMove?.cell !== undefined)
             highlightedCells.add(activeMove.cell);
         activeMove?.eliminations?.forEach(({ cell }) => highlightedCells.add(cell));
         highlightedCells.forEach((cell) => renderedBoard.children[cell]?.classList.add('step-highlight'));
-        board.replaceChildren(renderedBoard);
+        const wrapper = document.createElement('div');
+        wrapper.className = `walkthrough-board${highlightedCells.size ? ' has-active-step' : ''}`;
+        const topGuide = document.createElement('div');
+        topGuide.className = 'top-guide';
+        const leftGuide = document.createElement('div');
+        leftGuide.className = 'left-guide';
+        new Set([...highlightedCells].map((cell) => cell % 12)).forEach((column) => {
+            const arrow = document.createElement('span');
+            arrow.className = 'guide-arrow';
+            arrow.textContent = '▼';
+            arrow.style.left = `${((column + 0.5) / 12) * 100}%`;
+            topGuide.append(arrow);
+        });
+        new Set([...highlightedCells].map((cell) => Math.floor(cell / 12))).forEach((row) => {
+            const arrow = document.createElement('span');
+            arrow.className = 'guide-arrow';
+            arrow.textContent = '▶';
+            arrow.style.top = `${((row + 0.5) / 12) * 100}%`;
+            leftGuide.append(arrow);
+        });
+        wrapper.append(topGuide, leftGuide, renderedBoard);
+        board.replaceChildren(wrapper);
         first.disabled = currentStep === 0;
         previous.disabled = currentStep === 0;
         next.disabled = currentStep === lastStep;

@@ -13,8 +13,8 @@ const imageButton = document.querySelector('#copy-image');
 const finalSection = document.querySelector('#final-section');
 const finalGrid = document.querySelector('#final-grid');
 const walkthroughBoard = document.querySelector('#walkthrough-board');
-const topArrow = document.querySelector('#top-arrow');
-const leftArrow = document.querySelector('#left-arrow');
+const topGuide = document.querySelector('.top-guide');
+const leftGuide = document.querySelector('.left-guide');
 const summary = document.querySelector('#generation-summary');
 const finalStringButton = document.querySelector('#copy-final-string');
 const finalImageButton = document.querySelector('#copy-final-image');
@@ -53,6 +53,10 @@ for (let row = 1; row <= 12; row += 1) {
 generator.addEventListener('click', () => {
     const startedAt = performance.now();
     const complete = generateCompletedGrid();
+    if (complete.length !== 144 || complete.some((value, cell) => isBlackCell(cell) ? value !== 0 : !Number.isInteger(value) || value < 1 || value > 9)) {
+        well.textContent = 'The generated grid does not match the selected layout. Please refresh the page and try again.';
+        return;
+    }
     playableCells.forEach(entry => {
         const cell = (entry.row - 1) * 12 + entry.column - 1;
         entry.cell.textContent = complete[cell];
@@ -202,21 +206,25 @@ function setReplayStep(requestedStep) {
     stepPreviousButton.disabled = step === 0;
     stepNextButton.disabled = step === solveTrace.length + 1;
     stepLastButton.disabled = step === solveTrace.length + 1;
-    if (step < 2) {
-        walkthroughBoard.classList.remove('has-active-step');
-    }
-    else {
-        const cell = solveTrace[step - 2].sourceCells?.[0];
-        if (cell === undefined) {
-            walkthroughBoard.classList.remove('has-active-step');
-            return;
-        }
-        const row = Math.floor(cell / 12);
-        const column = cell % 12;
-        topArrow.style.left = `${((column + 0.5) / 12) * 100}%`;
-        leftArrow.style.top = `${((row + 0.5) / 12) * 100}%`;
-        walkthroughBoard.classList.add('has-active-step');
-    }
+    topGuide.replaceChildren();
+    leftGuide.replaceChildren();
+    const move = step >= 2 ? solveTrace[step - 2] : null;
+    const cells = move ? [...move.sourceCells, ...(move.eliminations ?? []).map(({ cell }) => cell), ...(move.cell !== undefined ? [move.cell] : [])] : [];
+    new Set(cells.map((cell) => cell % 12)).forEach((column) => {
+        const arrow = document.createElement('span');
+        arrow.className = 'guide-arrow';
+        arrow.textContent = '▼';
+        arrow.style.left = `${((column + 0.5) / 12) * 100}%`;
+        topGuide.append(arrow);
+    });
+    new Set(cells.map((cell) => Math.floor(cell / 12))).forEach((row) => {
+        const arrow = document.createElement('span');
+        arrow.className = 'guide-arrow';
+        arrow.textContent = '▶';
+        arrow.style.top = `${((row + 0.5) / 12) * 100}%`;
+        leftGuide.append(arrow);
+    });
+    walkthroughBoard.classList.toggle('has-active-step', cells.length > 0);
 }
 stepSelect.addEventListener('change', () => setReplayStep(Number(stepSelect.value)));
 stepStartButton.addEventListener('click', () => setReplayStep(0));

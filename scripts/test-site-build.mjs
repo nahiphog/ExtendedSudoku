@@ -18,8 +18,8 @@ const pages = [
 for (const [pagePath, scriptName] of pages) {
   const page = read(pagePath);
   assert(page.includes('rel="icon" href="./favicon.png"'), `${pagePath} must load the shared browser-tab icon`);
-  assert(page.includes('src="./core/extended-sudoku-core.js"'), `${pagePath} must load the local-file-safe solver bundle`);
-  assert(page.includes(`src="./${scriptName}"`), `${pagePath} must load ${scriptName}`);
+  assert(/src="\.\/core\/extended-sudoku-core\.js(?:\?[^\"]+)?"/.test(page), `${pagePath} must load the local-file-safe solver bundle`);
+  assert(page.includes(`src="./${scriptName}"`) || page.includes(`src="./${scriptName}?`), `${pagePath} must load ${scriptName}`);
   assert(!page.includes(`type="module" src="./${scriptName}"`), `${pagePath} must not require file:// module imports`);
   const scriptPath = resolve(root, 'dist', scriptName);
   assert(existsSync(scriptPath), `${scriptName} must be emitted by TypeScript`);
@@ -151,6 +151,15 @@ const versionTwoContext = { window: {}, localStorage: { getItem: () => '2' } };
 vm.runInNewContext(read('dist/core/extended-sudoku-core.js'), versionTwoContext);
 const versionTwo = versionTwoContext.window.ExtendedSudokuCore;
 assert(versionOne.GRID_VERSION === 1 && versionTwo.GRID_VERSION === 2, 'the browser solver must load the chosen grid version');
+const swordfishPuzzle = '4..1..9......3..5..7......7..9..6...5.....7..1...2.....1..5...4.....5..79..4.....8...4..2.....7...1..6.....4...3..1..7......6..5..3......2..8..9';
+const swordfishParsed = versionTwo.parsePuzzle(swordfishPuzzle);
+assert(!swordfishParsed.errors.length, 'the reported puzzle must parse in Version 2');
+const swordfishResult = versionTwo.solveWithTechniques(swordfishParsed.values, true);
+assert(swordfishResult.walkthroughValid, 'the reported puzzle must have a valid walkthrough');
+for (const step of [31, 32]) {
+  const move = swordfishResult.moves[step - 2];
+  assert(move.technique === 'Swordfish' && move.explanation.includes('Therefore') && move.explanation.includes('Box'), `step ${step} must explain its Swordfish and eliminations`);
+}
 for (let cell = 0; cell < 144; cell += 1) {
   const row = Math.floor(cell / 12);
   const originalRow = row >= 3 && row < 6 ? row + 3 : row >= 6 && row < 9 ? row - 3 : row;
@@ -164,5 +173,38 @@ const versionTwoGrid = Array.from({ length: 144 }, (_, cell) => {
 });
 assert(versionTwo.findSolutions(versionTwoGrid, 2).length === 1, 'a band-swapped Version 1 solution must be valid under Version 2');
 assert(!read('src/app.ts').includes('greyAreas') && read('src/app.ts').includes('const grey = isBlackCell'), 'Generate must draw the solver’s selected grid layout');
+
+// Exercise the actual Generate page renderer with each version's real generator.
+for (const core of [versionOne, versionTwo]) {
+  const elementsById = new Map();
+  const makeElement = () => ({
+    children: [], dataset: {}, style: {}, handlers: {}, value: 'single',
+    classList: { toggle() {}, add() {}, remove() {} },
+    setAttribute() {}, addEventListener(type, handler) { this.handlers[type] = handler; },
+    append(...children) { this.children.push(...children); },
+    replaceChildren(...children) { this.children = children; },
+  });
+  const document = {
+    createElement: makeElement,
+    querySelector(selector) {
+      if (!elementsById.has(selector)) elementsById.set(selector, makeElement());
+      return elementsById.get(selector);
+    },
+  };
+  const testCore = { ...core, digSingleCell: (grid) => [...grid], solveWithTechniques: () => ({ moves: [] }) };
+  vm.runInNewContext(read('dist/app.js'), {
+    document, performance: { now: () => 0 },
+    window: { ExtendedSudokuCore: testCore, ExtendedEngine: { buildLayout: () => ({}) } },
+  });
+  elementsById.get('#generate').handlers.click();
+  const cells = elementsById.get('#grid').children;
+  assert(cells.length === 144, `Version ${core.GRID_VERSION} must render 144 cells`);
+  cells.forEach((cell, index) => {
+    const shaded = cell.className.split(' ').includes('grey');
+    assert(shaded === core.isBlackCell(index), `Version ${core.GRID_VERSION} cell ${index} must match the solver layout`);
+    assert(shaded ? !cell.textContent : /^[1-9]$/.test(String(cell.textContent)), `Version ${core.GRID_VERSION} cell ${index} must not display a zero`);
+  });
+}
+assert(generatePage.includes('extended-sudoku-core.js?v=walkthrough-3') && generatePage.includes('app.js?v=walkthrough-3'), 'Generate must request matching fresh layout scripts');
 
 console.log('Passed Generate and Verify module preflight.');
