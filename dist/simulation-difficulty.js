@@ -86,7 +86,7 @@ function show(results, unknown, focus = false) {
 }
 function calculateDifficulty(puzzle) {
     return new Promise((resolve) => {
-        const worker = new Worker('./simulation-difficulty-worker.js');
+        const worker = new Worker('./simulation-difficulty-worker.js?v=default-grid-2');
         let settled = false;
         const finish = (result) => {
             if (settled)

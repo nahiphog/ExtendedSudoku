@@ -8,9 +8,9 @@ export const DIGITS = Object.freeze([1, 2, 3, 4, 5, 6, 7, 8, 9] as const);
 /** Version 2 swaps row bands 4–6 and 7–9, then renumbers rows normally. */
 const readGridVersion = (): 1 | 2 => {
   const scope = globalThis as typeof globalThis & { ExtendedSudokuGridVersion?: number };
-  if (scope.ExtendedSudokuGridVersion === 2) return 2;
-  try { return scope.localStorage?.getItem('extended-sudoku-grid-version') === '2' ? 2 : 1; }
-  catch { return 1; }
+  if (scope.ExtendedSudokuGridVersion === 1 || scope.ExtendedSudokuGridVersion === 2) return scope.ExtendedSudokuGridVersion;
+  try { return scope.localStorage?.getItem('extended-sudoku-grid-version') === '1' ? 1 : 2; }
+  catch { return 2; }
 };
 export const GRID_VERSION = readGridVersion();
 export const BLACK_BOX_ORIGINS = Object.freeze(GRID_VERSION === 2

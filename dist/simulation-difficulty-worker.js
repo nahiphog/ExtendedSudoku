@@ -5,7 +5,7 @@
 self.onmessage = ({ data }) => {
     try {
         self.ExtendedSudokuGridVersion = data.version;
-        importScripts('./core/extended-sudoku-core.js');
+        importScripts('./core/extended-sudoku-core.js?v=default-grid-2');
         const solved = self.ExtendedSudokuCore.solveWithTechniques(data.puzzle);
         self.postMessage({ moves: solved.moves });
     }

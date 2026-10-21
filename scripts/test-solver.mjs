@@ -1,7 +1,8 @@
-import { cellAt, parsePuzzle } from '../dist/core/grid.js';
-import { applyPlacement, buildCandidates, removeCandidate } from '../dist/core/candidates.js';
-import { ENABLED_LOGICAL_TECHNIQUES, findBasicFish, findEmptyRectangle, findHiddenSubset, findNakedSubset, findSolutions, findWWing, findXYWing, findXYZWing, isConsistent, solveWithTechniques } from '../dist/core/solver.js';
-import { digSingleCell, generateCompletedGrid } from '../dist/core/generator.js';
+globalThis.ExtendedSudokuGridVersion = 1;
+const { cellAt, parsePuzzle } = await import('../dist/core/grid.js');
+const { applyPlacement, buildCandidates, removeCandidate } = await import('../dist/core/candidates.js');
+const { ENABLED_LOGICAL_TECHNIQUES, findBasicFish, findEmptyRectangle, findHiddenSubset, findNakedSubset, findSolutions, findWWing, findXYWing, findXYZWing, isConsistent, solveWithTechniques } = await import('../dist/core/solver.js');
+const { digSingleCell, generateCompletedGrid } = await import('../dist/core/generator.js');
 
 const assert = (condition, message) => {
   if (!condition) throw new Error(message);

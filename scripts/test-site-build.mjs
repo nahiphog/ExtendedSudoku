@@ -31,7 +31,7 @@ assert(existsSync(resolve(root, 'dist/favicon.png')), 'the shared browser-tab ic
 assert(existsSync(resolve(root, 'dist/about.js')), 'the shared About dialog script must be present');
 for (const pagePath of ['dist/index.html', 'dist/custom-build.html', 'dist/techniques.html', 'dist/validator.html', 'dist/simulation.html', 'dist/simulation-difficulty.html']) {
   assert(read(pagePath).includes('rel="icon" href="./favicon.png"'), `${pagePath} must load the shared browser-tab icon`);
-  assert(read(pagePath).includes('src="./about.js"'), `${pagePath} must load the shared About dialog`);
+  assert(read(pagePath).includes('src="./about.js?v=default-grid-2"'), `${pagePath} must load the shared About dialog`);
 }
 const aboutScript = read('dist/about.js');
 assert(aboutScript.includes("aboutButton.textContent = 'About'") && aboutScript.includes('Rows and columns continue across the empty spaces.'), 'the About dialog must provide the refined rules');
@@ -50,6 +50,8 @@ const nav = createElement('nav');
 const body = createElement('body');
 vm.runInNewContext(aboutScript, { document: { createElement, body, querySelector: (selector) => selector === '.site-title' ? header : nav } });
 const aboutButton = elements.find((element) => element.id === 'about-button');
+const gridSelector = elements.find((element) => element.className === 'grid-version-select');
+assert(gridSelector.value === '2', 'the grid selector must default to Version 2 when storage is unavailable');
 const aboutDialog = elements.find((element) => element.tag === 'dialog');
 const closeButton = elements.find((element) => element.textContent === 'Close');
 aboutButton.handlers.click();
@@ -124,6 +126,7 @@ assert(simulationPage.includes('id="clue-histogram"') && simulationPage.includes
 const simulationSource = read('src/simulation.ts');
 assert(simulationSource.includes('count === 26') && simulationSource.includes('frequencies[latestClueCount] += 1') && simulationSource.includes('qualifying-bar') && simulationSource.includes('if (!frequency) continue') && simulationSource.includes('tallyLabel = String(frequency)') && simulationSource.includes('updateHistogram(frequencies, clueLimit);') && styles.includes('flex: 0 0 21px') && styles.includes('gap: 12px') && styles.includes('height: 380px') && styles.includes('content: attr(data-clues)') && styles.includes('content: attr(data-tally-label)'), 'Simulation must default to 26 clues and render only observed bars with real-time tally and x-axis labels');
 const validatorPage = read('dist/validator.html');
+assert(/@media \(max-width: 1080px\)[\s\S]*?\.validator-card \.final-workspace\s*\{\s*grid-template-columns:\s*minmax\(0, 1fr\)/.test(styles) && styles.includes('.validator-card .statistics { grid-row: 2; }'), 'Verify must stack its walkthrough controls below the grid on narrow screens');
 assert(validatorPage.includes('class="actions validator-actions"'), 'Verify controls must share one action row');
 const validatorScript = read('dist/validator.js');
 assert(validatorScript.includes("createGridCopyActions(givens, 'final grid')") && validatorScript.includes("createGridCopyActions(solved.solution, 'completed grid')") && validatorScript.includes('copyGridImage'),
@@ -141,16 +144,19 @@ assert(techniquesPage.includes('<td>Swordfish</td><td>150</td><td>Active</td>'),
 assert(techniquesPage.includes('<td>Jellyfish</td><td>160</td><td>Active</td>'), 'technique ratings must show Jellyfish as active with SudokUI difficulty 160');
 
 assert(existsSync(resolve(root, 'dist/core/extended-sudoku-core.js')), 'the shared browser solver bundle must be emitted');
-const browserContext = { window: {} };
+const browserContext = { window: {}, localStorage: { getItem: () => '1' } };
 vm.runInNewContext(read('dist/core/extended-sudoku-core.js'), browserContext);
 for (const functionName of ['solveWithTechniques', 'buildCandidates', 'findSolutions', 'generateCompletedGrid', 'digSingleCell', 'digDualCell']) {
   assert(typeof browserContext.window.ExtendedSudokuCore?.[functionName] === 'function', `browser bundle must expose ${functionName}`);
 }
 const versionOne = browserContext.window.ExtendedSudokuCore;
-const versionTwoContext = { window: {}, localStorage: { getItem: () => '2' } };
+const versionTwoContext = { window: {}, localStorage: { getItem: () => null } };
 vm.runInNewContext(read('dist/core/extended-sudoku-core.js'), versionTwoContext);
 const versionTwo = versionTwoContext.window.ExtendedSudokuCore;
 assert(versionOne.GRID_VERSION === 1 && versionTwo.GRID_VERSION === 2, 'the browser solver must load the chosen grid version');
+const workerOne = { window: {}, ExtendedSudokuGridVersion: 1 };
+vm.runInNewContext(read('dist/core/extended-sudoku-core.js'), workerOne);
+assert(workerOne.window.ExtendedSudokuCore.GRID_VERSION === 1, 'worker override must preserve Version 1');
 const swordfishPuzzle = '4..1..9......3..5..7......7..9..6...5.....7..1...2.....1..5...4.....5..79..4.....8...4..2.....7...1..6.....4...3..1..7......6..5..3......2..8..9';
 const swordfishParsed = versionTwo.parsePuzzle(swordfishPuzzle);
 assert(!swordfishParsed.errors.length, 'the reported puzzle must parse in Version 2');
@@ -205,6 +211,6 @@ for (const core of [versionOne, versionTwo]) {
     assert(shaded ? !cell.textContent : /^[1-9]$/.test(String(cell.textContent)), `Version ${core.GRID_VERSION} cell ${index} must not display a zero`);
   });
 }
-assert(generatePage.includes('extended-sudoku-core.js?v=walkthrough-3') && generatePage.includes('app.js?v=walkthrough-3'), 'Generate must request matching fresh layout scripts');
+assert(generatePage.includes('extended-sudoku-core.js?v=default-grid-2') && generatePage.includes('app.js?v=walkthrough-3'), 'Generate must request matching fresh layout scripts');
 
 console.log('Passed Generate and Verify module preflight.');

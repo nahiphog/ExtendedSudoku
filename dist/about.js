@@ -7,11 +7,11 @@
   const versionTwo = document.createElement('option');
   versionTwo.value = '2'; versionTwo.textContent = 'Grid version 2';
   gridVersion.append(versionOne, versionTwo);
-  try { gridVersion.value = localStorage.getItem('extended-sudoku-grid-version') === '2' ? '2' : '1'; }
-  catch { gridVersion.value = '1'; }
+  try { gridVersion.value = localStorage.getItem('extended-sudoku-grid-version') === '1' ? '1' : '2'; }
+  catch { gridVersion.value = '2'; }
   gridVersion.addEventListener('change', () => {
     try { localStorage.setItem('extended-sudoku-grid-version', gridVersion.value); location.reload(); }
-    catch { gridVersion.value = '1'; alert('Grid version selection requires browser storage.'); }
+    catch { gridVersion.value = '2'; alert('Grid version selection requires browser storage.'); }
   });
   const aboutButton = document.createElement('button');
   aboutButton.id = 'about-button';

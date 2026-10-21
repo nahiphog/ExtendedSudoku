@@ -90,7 +90,11 @@ h2 { margin: 22px 0 10px; font-size: 1rem; }
 .completed-heading h2 { margin-right: 0; }
 .completed-heading button { padding: 6px 10px; border: 2px solid #000; background: #fff; font: 600 13px Arial, sans-serif; cursor: pointer; }
 .completed-heading button:hover, .completed-heading button:focus-visible { background: #000; color: #fff; outline: 0; }
-@media (max-width: 1080px) { .final-workspace { grid-template-columns: 1fr; } }
+@media (max-width: 1080px) {
+  .final-workspace, .validator-card .final-workspace { grid-template-columns: minmax(0, 1fr); }
+  .validator-card .final-grid-shell, .validator-card .statistics { grid-column: 1; min-width: 0; }
+  .validator-card .statistics { grid-row: 2; }
+}
 .techniques-page { width: min(92vw, 760px); padding: 36px 0; }
 .validator-page { width: min(96vw, 1120px); }
 .techniques-page h1 { text-align: left; }
