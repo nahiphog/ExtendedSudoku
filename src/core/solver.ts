@@ -19,6 +19,12 @@ const bitCount = (value: number): number => {
   return count;
 };
 
+export interface SolutionCountMetrics {
+  nodes: number;
+  branches: number;
+  forcedPlacements: number;
+}
+
 export const isConsistent = (values: readonly number[]): boolean => {
   if (values.length !== 144) return false;
   return UNITS.every((unit) => {
@@ -34,47 +40,76 @@ export const isConsistent = (values: readonly number[]): boolean => {
 };
 
 /** Counts solutions with MRV backtracking, stopping at `limit`. */
-export const countSolutions = (input: readonly number[], limit = 2): number => {
-  if (!isConsistent(input)) return 0;
+export const countSolutionsWithMetrics = (input: readonly number[], limit = 2): { count: number; metrics: SolutionCountMetrics } => {
+  const metrics: SolutionCountMetrics = { nodes: 0, branches: 0, forcedPlacements: 0 };
+  if (!isConsistent(input) || limit < 1) return { count: 0, metrics };
   const values = [...input];
   const masks = UNITS.map((unit) => unit.reduce((mask, cell) => mask | (values[cell] ? digitMask(values[cell]) : 0), 0));
   let found = 0;
 
+  const optionsFor = (cell: number): number => {
+    let used = 0;
+    CELL_UNITS[cell].forEach((unitIndex) => { used |= masks[unitIndex]; });
+    return ALL_DIGITS_MASK & ~used;
+  };
+  const place = (cell: number, flag: number): void => {
+    values[cell] = Math.log2(flag) + 1;
+    CELL_UNITS[cell].forEach((unitIndex) => { masks[unitIndex] |= flag; });
+  };
+  const remove = (cell: number, flag: number): void => {
+    values[cell] = 0;
+    CELL_UNITS[cell].forEach((unitIndex) => { masks[unitIndex] &= ~flag; });
+  };
+
   const search = (): void => {
     if (found >= limit) return;
+    metrics.nodes += 1;
+    const forced: Array<readonly [number, number]> = [];
     let bestCell = -1;
     let bestMask = 0;
     let bestCount = 10;
-    for (const cell of ACTIVE_CELLS) {
-      if (values[cell]) continue;
-      let used = 0;
-      CELL_UNITS[cell].forEach((unitIndex) => { used |= masks[unitIndex]; });
-      const options = ALL_DIGITS_MASK & ~used;
-      const optionCount = bitCount(options);
-      if (!optionCount) return;
-      if (optionCount < bestCount) {
-        bestCell = cell;
-        bestMask = options;
-        bestCount = optionCount;
-        if (optionCount === 1) break;
+    let contradiction = false;
+    // Keep applying naked singles before making a branch. Each placement may
+    // expose another single, so scan until the state reaches a fixed point.
+    do {
+      let placed = false;
+      for (const cell of ACTIVE_CELLS) {
+        if (values[cell]) continue;
+        const options = optionsFor(cell);
+        if (!options) { contradiction = true; break; }
+        if (bitCount(options) === 1) {
+          place(cell, options); forced.push([cell, options]); metrics.forcedPlacements += 1; placed = true;
+        }
+      }
+      if (contradiction || !placed) break;
+    } while (true);
+    if (!contradiction) {
+      for (const cell of ACTIVE_CELLS) {
+        if (values[cell]) continue;
+        const options = optionsFor(cell);
+        const optionCount = bitCount(options);
+        if (!optionCount) { contradiction = true; break; }
+        if (optionCount < bestCount) { bestCell = cell; bestMask = options; bestCount = optionCount; }
+      }
+      if (!contradiction && bestCell === -1) found += 1;
+      if (!contradiction && bestCell !== -1) {
+        for (const digit of DIGITS) {
+          const flag = digitMask(digit);
+          if (!(bestMask & flag)) continue;
+          metrics.branches += 1;
+          place(bestCell, flag); search(); remove(bestCell, flag);
+          if (found >= limit) break;
+        }
       }
     }
-    if (bestCell === -1) { found += 1; return; }
-    for (const digit of DIGITS) {
-      const flag = digitMask(digit);
-      if (!(bestMask & flag)) continue;
-      values[bestCell] = digit;
-      CELL_UNITS[bestCell].forEach((unitIndex) => { masks[unitIndex] |= flag; });
-      search();
-      values[bestCell] = 0;
-      CELL_UNITS[bestCell].forEach((unitIndex) => { masks[unitIndex] &= ~flag; });
-      if (found >= limit) return;
-    }
+    for (let index = forced.length - 1; index >= 0; index -= 1) remove(forced[index][0], forced[index][1]);
   };
 
   search();
-  return found;
+  return { count: found, metrics };
 };
+
+export const countSolutions = (input: readonly number[], limit = 2): number => countSolutionsWithMetrics(input, limit).count;
 
 /** Returns one complete solution, or null if none exists. */
 export const solveOne = (input: readonly number[]): GridValues | null => {

@@ -2,7 +2,8 @@
   "type": "module",
   "scripts": {
     "build": "tsc --project tsconfig.json && node scripts/build-browser-core.mjs",
-    "test": "npm run build && node scripts/test-solver.mjs && node scripts/test-site-build.mjs"
+    "test": "npm run build && node scripts/test-solver.mjs && node scripts/test-site-build.mjs",
+    "benchmark:digging": "npm run build && node scripts/benchmark-digging.mjs"
   },
   "devDependencies": {
     "typescript": "^7.0.2"

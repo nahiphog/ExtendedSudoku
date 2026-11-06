@@ -8,6 +8,7 @@ const sourceFiles = ['grid.js', 'candidates.js', 'solver.js', 'generator.js'];
 
 const stripModuleSyntax = (source) => source
   .replace(/^import .*?;\r?\n/gm, '')
+  .replace(/^export interface [^{]+\{[\s\S]*?^\}\r?\n/gm, '')
   .replace(/^export \{\};\r?\n/gm, '')
   .replace(/\bexport const\b/g, 'const')
   .replace(/\bexport function\b/g, 'function');

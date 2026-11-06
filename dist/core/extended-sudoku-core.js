@@ -165,55 +165,96 @@ const isConsistent = (values) => {
     }) && values.every((value, cell) => !isBlackCell(cell) || value === 0);
 };
 /** Counts solutions with MRV backtracking, stopping at `limit`. */
-const countSolutions = (input, limit = 2) => {
-    if (!isConsistent(input))
-        return 0;
+const countSolutionsWithMetrics = (input, limit = 2) => {
+    const metrics = { nodes: 0, branches: 0, forcedPlacements: 0 };
+    if (!isConsistent(input) || limit < 1)
+        return { count: 0, metrics };
     const values = [...input];
     const masks = UNITS.map((unit) => unit.reduce((mask, cell) => mask | (values[cell] ? digitMask(values[cell]) : 0), 0));
     let found = 0;
+    const optionsFor = (cell) => {
+        let used = 0;
+        CELL_UNITS[cell].forEach((unitIndex) => { used |= masks[unitIndex]; });
+        return ALL_DIGITS_MASK & ~used;
+    };
+    const place = (cell, flag) => {
+        values[cell] = Math.log2(flag) + 1;
+        CELL_UNITS[cell].forEach((unitIndex) => { masks[unitIndex] |= flag; });
+    };
+    const remove = (cell, flag) => {
+        values[cell] = 0;
+        CELL_UNITS[cell].forEach((unitIndex) => { masks[unitIndex] &= ~flag; });
+    };
     const search = () => {
         if (found >= limit)
             return;
+        metrics.nodes += 1;
+        const forced = [];
         let bestCell = -1;
         let bestMask = 0;
         let bestCount = 10;
-        for (const cell of ACTIVE_CELLS) {
-            if (values[cell])
-                continue;
-            let used = 0;
-            CELL_UNITS[cell].forEach((unitIndex) => { used |= masks[unitIndex]; });
-            const options = ALL_DIGITS_MASK & ~used;
-            const optionCount = bitCount(options);
-            if (!optionCount)
-                return;
-            if (optionCount < bestCount) {
-                bestCell = cell;
-                bestMask = options;
-                bestCount = optionCount;
-                if (optionCount === 1)
+        let contradiction = false;
+        // Keep applying naked singles before making a branch. Each placement may
+        // expose another single, so scan until the state reaches a fixed point.
+        do {
+            let placed = false;
+            for (const cell of ACTIVE_CELLS) {
+                if (values[cell])
+                    continue;
+                const options = optionsFor(cell);
+                if (!options) {
+                    contradiction = true;
                     break;
+                }
+                if (bitCount(options) === 1) {
+                    place(cell, options);
+                    forced.push([cell, options]);
+                    metrics.forcedPlacements += 1;
+                    placed = true;
+                }
+            }
+            if (contradiction || !placed)
+                break;
+        } while (true);
+        if (!contradiction) {
+            for (const cell of ACTIVE_CELLS) {
+                if (values[cell])
+                    continue;
+                const options = optionsFor(cell);
+                const optionCount = bitCount(options);
+                if (!optionCount) {
+                    contradiction = true;
+                    break;
+                }
+                if (optionCount < bestCount) {
+                    bestCell = cell;
+                    bestMask = options;
+                    bestCount = optionCount;
+                }
+            }
+            if (!contradiction && bestCell === -1)
+                found += 1;
+            if (!contradiction && bestCell !== -1) {
+                for (const digit of DIGITS) {
+                    const flag = digitMask(digit);
+                    if (!(bestMask & flag))
+                        continue;
+                    metrics.branches += 1;
+                    place(bestCell, flag);
+                    search();
+                    remove(bestCell, flag);
+                    if (found >= limit)
+                        break;
+                }
             }
         }
-        if (bestCell === -1) {
-            found += 1;
-            return;
-        }
-        for (const digit of DIGITS) {
-            const flag = digitMask(digit);
-            if (!(bestMask & flag))
-                continue;
-            values[bestCell] = digit;
-            CELL_UNITS[bestCell].forEach((unitIndex) => { masks[unitIndex] |= flag; });
-            search();
-            values[bestCell] = 0;
-            CELL_UNITS[bestCell].forEach((unitIndex) => { masks[unitIndex] &= ~flag; });
-            if (found >= limit)
-                return;
-        }
+        for (let index = forced.length - 1; index >= 0; index -= 1)
+            remove(forced[index][0], forced[index][1]);
     };
     search();
-    return found;
+    return { count: found, metrics };
 };
+const countSolutions = (input, limit = 2) => countSolutionsWithMetrics(input, limit).count;
 /** Returns one complete solution, or null if none exists. */
 const solveOne = (input) => {
     if (!isConsistent(input))
@@ -751,16 +792,16 @@ const solveWithTechniques = (input, allowBruteForce = true) => {
     return { solution: values, solutionCount: countSolutions(input), moves, usedBruteForce: true, walkthroughValid: true };
 };
 
-const shuffle = (items) => {
+const shuffle = (items, random = Math.random) => {
     const result = [...items];
     for (let index = result.length - 1; index > 0; index -= 1) {
-        const swapIndex = Math.floor(Math.random() * (index + 1));
+        const swapIndex = Math.floor(random() * (index + 1));
         [result[index], result[swapIndex]] = [result[swapIndex], result[index]];
     }
     return result;
 };
 /** Creates a completed, randomized Extended Sudoku solution. */
-const generateCompletedGrid = () => {
+const generateCompletedGrid = (random = Math.random) => {
     const values = emptyGrid();
     const solve = () => {
         let bestCell = -1;
@@ -780,7 +821,7 @@ const generateCompletedGrid = () => {
         }
         if (bestCell === -1)
             return true;
-        for (const digit of shuffle(bestCandidates)) {
+        for (const digit of shuffle(bestCandidates, random)) {
             values[bestCell] = digit;
             if (solve())
                 return true;
@@ -792,23 +833,33 @@ const generateCompletedGrid = () => {
         throw new Error('Could not generate a completed Extended Sudoku grid.');
     return values;
 };
+const recordCheck = (puzzle, metrics) => {
+    const result = countSolutionsWithMetrics(puzzle, 2);
+    if (metrics) {
+        metrics.uniquenessChecks += 1;
+        metrics.searchNodes += result.metrics.nodes;
+        metrics.branches += result.metrics.branches;
+        metrics.forcedPlacements += result.metrics.forcedPlacements;
+    }
+    return result.count === 1;
+};
 /** Removes individual clues while retaining a unique solution. */
-const digSingleCell = (completed) => {
+const digSingleCell = (completed, options = {}) => {
     const puzzle = [...completed];
-    for (const cell of shuffle(ACTIVE_CELLS)) {
+    for (const cell of shuffle(ACTIVE_CELLS, options.random)) {
         const value = puzzle[cell];
         puzzle[cell] = 0;
-        if (countSolutions(puzzle, 2) !== 1)
+        if (!recordCheck(puzzle, options.metrics))
             puzzle[cell] = value;
     }
     return puzzle;
 };
 /** Removes rotationally mirrored clue pairs while retaining a unique solution. */
-const digDualCell = (completed) => {
+const digDualCell = (completed, options = {}) => {
     const puzzle = [...completed];
     const tested = new Set();
     const pairs = [];
-    for (const cell of shuffle(ACTIVE_CELLS)) {
+    for (const cell of shuffle(ACTIVE_CELLS, options.random)) {
         if (tested.has(cell))
             continue;
         const mirror = 143 - cell;
@@ -821,7 +872,7 @@ const digDualCell = (completed) => {
         const mirrorValue = puzzle[mirror];
         puzzle[cell] = 0;
         puzzle[mirror] = 0;
-        if (countSolutions(puzzle, 2) !== 1) {
+        if (!recordCheck(puzzle, options.metrics)) {
             puzzle[cell] = value;
             puzzle[mirror] = mirrorValue;
         }

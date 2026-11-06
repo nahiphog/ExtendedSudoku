@@ -1,5 +1,5 @@
 globalThis.ExtendedSudokuGridVersion = 1;
-const { cellAt, parsePuzzle } = await import('../dist/core/grid.js');
+const { ACTIVE_CELLS, CELL_UNITS, DIGITS, UNITS, cellAt, parsePuzzle } = await import('../dist/core/grid.js');
 const { applyPlacement, buildCandidates, removeCandidate } = await import('../dist/core/candidates.js');
 const { ENABLED_LOGICAL_TECHNIQUES, findBasicFish, findEmptyRectangle, findHiddenSubset, findNakedSubset, findSolutions, findWWing, findXYWing, findXYZWing, isConsistent, solveWithTechniques } = await import('../dist/core/solver.js');
 const { digSingleCell, generateCompletedGrid } = await import('../dist/core/generator.js');
@@ -167,5 +167,49 @@ const generated = generateCompletedGrid();
 assert(isConsistent(generated), 'a generated completed grid must be consistent');
 const dug = digSingleCell(generated);
 assert(findSolutions(dug, 2).length === 1, 'single-cell digging must retain one solution');
+
+const seededRandom = (seed) => () => {
+  seed = (seed * 1664525 + 1013904223) >>> 0;
+  return seed / 0x1_0000_0000;
+};
+const metrics = { uniquenessChecks: 0, searchNodes: 0, branches: 0, forcedPlacements: 0 };
+const deterministicCompleted = generateCompletedGrid(seededRandom(12345));
+const deterministicDug = digSingleCell(deterministicCompleted, { random: seededRandom(67890), metrics });
+assert(metrics.uniquenessChecks === 108, 'single-cell digging must check each playable cell once');
+assert(metrics.searchNodes > 0 && metrics.forcedPlacements > 0, 'digging metrics must record the uniqueness search work');
+assert(findSolutions(deterministicDug, 2).length === 1, 'instrumented digging must retain one solution');
+
+// Preserve the exact removal decisions of the pre-optimization MRV counter.
+const legacyCountSolutions = (input, limit = 2) => {
+  const values = [...input];
+  const masks = UNITS.map((unit) => unit.reduce((mask, cell) => mask | (values[cell] ? 1 << (values[cell] - 1) : 0), 0));
+  let found = 0;
+  const search = () => {
+    if (found >= limit) return;
+    let bestCell = -1; let bestMask = 0; let bestCount = 10;
+    for (const cell of ACTIVE_CELLS) {
+      if (values[cell]) continue;
+      let used = 0; CELL_UNITS[cell].forEach((unit) => { used |= masks[unit]; });
+      const options = 0x1ff & ~used;
+      const count = options.toString(2).replaceAll('0', '').length;
+      if (!count) return;
+      if (count < bestCount) { bestCell = cell; bestMask = options; bestCount = count; if (count === 1) break; }
+    }
+    if (bestCell === -1) { found += 1; return; }
+    for (const digit of DIGITS) {
+      const flag = 1 << (digit - 1); if (!(bestMask & flag)) continue;
+      values[bestCell] = digit; CELL_UNITS[bestCell].forEach((unit) => { masks[unit] |= flag; });
+      search(); values[bestCell] = 0; CELL_UNITS[bestCell].forEach((unit) => { masks[unit] &= ~flag; });
+      if (found >= limit) return;
+    }
+  };
+  search(); return found;
+};
+const legacyDug = [...deterministicCompleted];
+for (const cell of (() => { const random = seededRandom(67890); const order = [...ACTIVE_CELLS]; for (let i = order.length - 1; i > 0; i -= 1) { const j = Math.floor(random() * (i + 1)); [order[i], order[j]] = [order[j], order[i]]; } return order; })()) {
+  const value = legacyDug[cell]; legacyDug[cell] = 0;
+  if (legacyCountSolutions(legacyDug, 2) !== 1) legacyDug[cell] = value;
+}
+assert(deterministicDug.join('') === legacyDug.join(''), 'optimized counting must preserve deterministic digging decisions');
 
 console.log(`Passed ${result.moves.length} validated walkthrough moves and ${verifyFixtures.length} Verify-page regressions.`);
