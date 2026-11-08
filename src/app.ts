@@ -74,7 +74,7 @@ const { isBlackCell, applyPlacement, buildCandidates, removeCandidate, solveWith
         solveTrace = solvedWalkthrough.moves;
         renderFinalGrid(0);
         const elapsed = ((performance.now() - startedAt) / 1000).toFixed(2);
-        const difficultyPoints = { 'Naked Single': 4, 'Hidden Single': 14, 'Locked Candidates': 50, 'Naked Pair': 60, 'Naked Triple': 80, 'Hidden Pair': 70, 'Hidden Triple': 100, 'Naked Quad': 120, 'Hidden Quad': 150, 'Empty Rectangle': 120, 'Swordfish': 150, 'Jellyfish': 160, 'XY-Wing': 160, 'XYZ-Wing': 180, 'W-Wing': 150, 'Brute force': 10000 };
+        const difficultyPoints = { 'Naked Single': 4, 'Hidden Single': 14, 'Locked Candidates': 50, 'Naked Pair': 60, 'Naked Triple': 80, 'Hidden Pair': 70, 'Hidden Triple': 100, 'Remote Pairs': 110, 'Naked Quad': 120, 'Hidden Quad': 150, 'Empty Rectangle': 120, 'Swordfish': 150, 'Jellyfish': 160, 'XY-Wing': 160, 'XYZ-Wing': 180, 'W-Wing': 150, 'Brute force': 10000 };
         const difficultyRating = solveTrace.reduce((total, step) => total + (difficultyPoints[step.technique] ?? 0), 0);
         summary.innerHTML = `Difficulty rating: <span class="difficulty-rating-value">${difficultyRating}</span> · ${108 - removed} clues · ${elapsed}s`;
         renderTechniqueTable(solveTrace);
@@ -151,7 +151,7 @@ const { isBlackCell, applyPlacement, buildCandidates, removeCandidate, solveWith
       }
 
       function renderTechniqueTable(trace) {
-        const techniqueDifficulty = { 'Snyder Notation': 0, 'Naked Single': 4, 'Hidden Single': 14, 'Locked Candidates': 50, 'Naked Pair': 60, 'Hidden Pair': 70, 'Naked Triple': 80, 'Hidden Triple': 100, 'Naked Quad': 120, 'Empty Rectangle': 120, 'Hidden Quad': 150, 'Swordfish': 150, 'W-Wing': 150, 'Jellyfish': 160, 'XY-Wing': 160, 'XYZ-Wing': 180, 'Brute force': 10000 };
+        const techniqueDifficulty = { 'Snyder Notation': 0, 'Naked Single': 4, 'Hidden Single': 14, 'Locked Candidates': 50, 'Naked Pair': 60, 'Hidden Pair': 70, 'Naked Triple': 80, 'Hidden Triple': 100, 'Remote Pairs': 110, 'Naked Quad': 120, 'Empty Rectangle': 120, 'Hidden Quad': 150, 'Swordfish': 150, 'W-Wing': 150, 'Jellyfish': 160, 'XY-Wing': 160, 'XYZ-Wing': 180, 'Brute force': 10000 };
         const order = [...new Set(trace.map(step => step.technique))].sort((left, right) => (techniqueDifficulty[left] ?? Infinity) - (techniqueDifficulty[right] ?? Infinity) || left.localeCompare(right));
         techniqueTable.replaceChildren();
         order.forEach(technique => {

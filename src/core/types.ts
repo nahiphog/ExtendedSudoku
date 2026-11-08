@@ -12,6 +12,7 @@ export type Technique =
   | 'Naked Triple'
   | 'Hidden Pair'
   | 'Hidden Triple'
+  | 'Remote Pairs'
   | 'Naked Quad'
   | 'Hidden Quad'
   | 'Swordfish'

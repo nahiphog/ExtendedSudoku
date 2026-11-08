@@ -1,7 +1,7 @@
 globalThis.ExtendedSudokuGridVersion = 1;
 const { ACTIVE_CELLS, CELL_UNITS, DIGITS, UNITS, cellAt, parsePuzzle } = await import('../dist/core/grid.js');
 const { applyPlacement, buildCandidates, removeCandidate } = await import('../dist/core/candidates.js');
-const { ENABLED_LOGICAL_TECHNIQUES, findBasicFish, findEmptyRectangle, findHiddenSubset, findNakedSubset, findSolutions, findWWing, findXYWing, findXYZWing, isConsistent, solveWithTechniques } = await import('../dist/core/solver.js');
+const { ENABLED_LOGICAL_TECHNIQUES, findBasicFish, findEmptyRectangle, findHiddenSubset, findNakedSubset, findRemotePairs, findSolutions, findWWing, findXYWing, findXYZWing, isConsistent, solveWithTechniques } = await import('../dist/core/solver.js');
 const { digSingleCell, generateCompletedGrid } = await import('../dist/core/generator.js');
 
 const assert = (condition, message) => {
@@ -102,6 +102,12 @@ assert(findHiddenSubset(candidateMap([
 assertEliminates(findWWing(candidateMap([
   [cellAt(0, 0), [1, 2]], [cellAt(3, 3), [1, 2]], [cellAt(0, 5), [1]], [cellAt(3, 5), [1]], [cellAt(0, 3), [2]],
 ])), 'W-Wing', cellAt(0, 3), 2);
+const remotePairsMove = findRemotePairs(candidateMap([
+  [cellAt(0, 0), [1, 2]], [cellAt(0, 3), [1, 2]], [cellAt(3, 3), [1, 2]], [cellAt(3, 9), [1, 2]],
+  [cellAt(0, 6), [1, 2, 4]],
+]));
+assertEliminates(remotePairsMove, 'Remote Pairs', cellAt(0, 6), 1);
+assert(remotePairsMove.eliminations?.some((entry) => entry.cell === cellAt(0, 6) && entry.digit === 2), 'Remote Pairs should remove both pair digits from a cell seeing both colours');
 assertEliminates(findBasicFish(candidateMap([
   [cellAt(0, 0), [7]], [cellAt(0, 3), [7]], [cellAt(1, 3), [7]], [cellAt(1, 6), [7]],
   [cellAt(2, 0), [7]], [cellAt(2, 6), [7]], [cellAt(3, 0), [7]],

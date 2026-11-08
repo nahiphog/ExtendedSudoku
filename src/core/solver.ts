@@ -393,6 +393,60 @@ export const findWWing = (candidates: CandidateMap): SolveMove | null => {
   return null;
 };
 
+/**
+ * Remote Pairs: identical bivalue cells joined by shared units alternate
+ * between the two digits. A cell seeing both colour classes cannot contain
+ * either digit. Adapted from SudokUI's bipartite-component formulation.
+ */
+export const findRemotePairs = (candidates: CandidateMap): SolveMove | null => {
+  const byPair = new Map<string, number[]>();
+  for (const [cell, digits] of candidates) {
+    if (digits.size !== 2) continue;
+    const pair = [...digits].sort((left, right) => left - right);
+    const key = pair.join(':');
+    byPair.set(key, [...(byPair.get(key) ?? []), cell]);
+  }
+  for (const [key, pairCells] of byPair) {
+    if (pairCells.length < 4) continue;
+    const [firstDigit, secondDigit] = key.split(':').map(Number) as [Digit, Digit];
+    const colours = new Map<number, number>();
+    for (const start of pairCells) {
+      if (colours.has(start)) continue;
+      const component: number[] = [];
+      const queue = [start];
+      colours.set(start, 0);
+      let bipartite = true;
+      while (queue.length) {
+        const current = queue.shift()!;
+        component.push(current);
+        for (const next of pairCells) {
+          if (next === current || !sees(current, next)) continue;
+          if (!colours.has(next)) { colours.set(next, 1 - colours.get(current)!); queue.push(next); }
+          else if (colours.get(next) === colours.get(current)) bipartite = false;
+        }
+      }
+      if (!bipartite || component.length < 4) continue;
+      const eliminations: CandidateElimination[] = [];
+      for (const [cell, digits] of candidates) {
+        if (component.includes(cell) || (!digits.has(firstDigit) && !digits.has(secondDigit))) continue;
+        const seesColour = [false, false];
+        component.forEach((source) => { if (sees(cell, source)) seesColour[colours.get(source)!] = true; });
+        if (!seesColour[0] || !seesColour[1]) continue;
+        if (digits.has(firstDigit)) eliminations.push({ cell, digit: firstDigit });
+        if (digits.has(secondDigit)) eliminations.push({ cell, digit: secondDigit });
+      }
+      if (!eliminations.length) continue;
+      const namedCells = component.map(describeCell).join(', ');
+      return eliminationMove('Remote Pairs', eliminations, component,
+        `Remote Pairs: ${namedCells} are bivalue cells containing only ${firstDigit} and ${secondDigit}. ` +
+        `Each pair of these cells that shares a row, column, or box must take opposite digits, creating two alternating colour groups. ` +
+        `Every eliminated cell sees a member of each colour group, so it cannot contain either ${firstDigit} or ${secondDigit}. ` +
+        `Remove ${eliminations.map(({ cell, digit }) => `${digit} from ${describeCell(cell)}`).join(', ')}.`);
+    }
+  }
+  return null;
+};
+
 /** Finds a standard row- or column-based fish, ignoring the black cells. */
 export const findBasicFish = (candidates: CandidateMap, size: 3 | 4): SolveMove | null => {
   const technique: Technique = size === 3 ? 'Swordfish' : 'Jellyfish';
@@ -502,6 +556,7 @@ export const LOGICAL_TECHNIQUE_SCORES: Readonly<Partial<Record<Technique, number
   'Hidden Pair': 70,
   'Naked Triple': 80,
   'Hidden Triple': 100,
+  'Remote Pairs': 110,
   'Naked Quad': 120,
   'Empty Rectangle': 120,
   'Hidden Quad': 150,
@@ -522,6 +577,7 @@ const LOGICAL_TECHNIQUES: readonly LogicalTechniqueDefinition[] = [
   { technique: 'Hidden Pair', difficulty: 70, find: (candidates) => findHiddenSubset(candidates, 2) },
   { technique: 'Naked Triple', difficulty: 80, find: (candidates) => findNakedSubset(candidates, 3) },
   { technique: 'Hidden Triple', difficulty: 100, find: (candidates) => findHiddenSubset(candidates, 3) },
+  { technique: 'Remote Pairs', difficulty: 110, find: findRemotePairs },
   { technique: 'Naked Quad', difficulty: 120, find: (candidates) => findNakedSubset(candidates, 4) },
   { technique: 'Empty Rectangle', difficulty: 120, find: findEmptyRectangle },
   { technique: 'Hidden Quad', difficulty: 150, find: (candidates) => findHiddenSubset(candidates, 4) },

@@ -142,6 +142,7 @@ assert(techniquesPage.includes('<td>Naked Quad</td><td>120</td><td>Active</td>')
 assert(techniquesPage.includes('<td>Hidden Quad</td><td>150</td><td>Active</td>'), 'technique ratings must show Hidden Quad as active with SudokUI difficulty 150');
 assert(techniquesPage.includes('<td>Swordfish</td><td>150</td><td>Active</td>'), 'technique ratings must show Swordfish as active with SudokUI difficulty 150');
 assert(techniquesPage.includes('<td>Jellyfish</td><td>160</td><td>Active</td>'), 'technique ratings must show Jellyfish as active with SudokUI difficulty 160');
+assert(techniquesPage.includes('<td>Remote Pairs</td><td>110</td><td>Active</td>'), 'technique ratings must show Remote Pairs as active with SudokUI difficulty 110');
 
 assert(existsSync(resolve(root, 'dist/core/extended-sudoku-core.js')), 'the shared browser solver bundle must be emitted');
 const browserContext = { window: {}, localStorage: { getItem: () => '1' } };
